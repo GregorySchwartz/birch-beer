@@ -1,0 +1,61 @@
+name:                birch-beer
+version:             0.1.0.0
+synopsis:            Plot a colorful tree.
+description:         Generate a tree for displaying a hierarchy of groups with colors, scaling, and more.
+homepage:            http://github.com/GregorySchwartz/birch-beer#readme
+license:             GPL-3
+license-file:        LICENSE
+author:              Gregory W. Schwartz
+maintainer:          gsch@pennmedicine.upenn.edu
+copyright:           2018 Gregory W. Schwartz
+category:            Bioinformatics
+build-type:          Simple
+-- extra-source-files:
+cabal-version:       >=1.10
+
+library
+  hs-source-dirs:      src
+  exposed-modules:     BirchBeer.Types
+                     , BirchBeer.Utility
+                     , BirchBeer.Plot
+                     , BirchBeer.ColorMap
+  build-depends:       base >= 4.7 && < 5
+                     , SVGFonts
+                     , aeson
+                     , colour
+                     , containers
+                     , diagrams
+                     , diagrams-cairo
+                     , diagrams-graphviz
+                     , diagrams-lib
+                     , fgl
+                     , foldl
+                     , graphviz
+                     , hierarchical-clustering
+                     , hierarchical-clustering-diagrams
+                     , hierarchical-spectral-clustering
+                     , inline-r
+                     , lens
+                     , mtl
+                     , palette
+                     , plots
+                     , sparse-linear-algebra
+                     , split
+                     , text
+                     , vector
+  ghc-options:         -O2
+  default-language:    Haskell2010
+
+-- For now, no executable.
+-- executable birch-beer
+--   hs-source-dirs:      app
+--   main-is:             Main.hs
+--   ghc-options:         -threaded -rtsopts -O2
+--   build-depends:       base
+--                      , birch-beer
+--                      , optparse-generic
+--   default-language:    Haskell2010
+
+source-repository head
+  type:     git
+  location: https://github.com/GregorySchwartz/birch-beer
