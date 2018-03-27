@@ -28,10 +28,17 @@ import qualified Data.Clustering.Hierarchical as HC
 import qualified Data.Graph.Inductive as G
 import qualified Data.Sequence as Seq
 import qualified Data.Sparse.Common as S
+import qualified Data.Vector as V
 
 -- Local
 
 -- Basic
+newtype Delimiter = Delimiter
+    { unDelimiter :: Char
+    } deriving (Eq,Ord,Read,Show)
+newtype LabelFile = LabelFile
+    { unLabelFile :: String
+    } deriving (Eq,Ord,Read,Show)
 newtype Label = Label
     { unLabel :: Text
     } deriving (Eq,Ord,Read,Show)
@@ -108,17 +115,20 @@ data DrawConfig = DrawConfig
 class TreeItem a where
     getId :: a -> Id
 
+instance TreeItem Text where
+    getId = Id
+
 class MatrixLike a where
     getMatrix   :: a -> S.SpMatrix Double
     getRowNames :: a -> Vector Text
     getColNames :: a -> Vector Text
 
 deriving instance (Read a) => Read (HC.Dendrogram a)
-deriving instance (Generic a) => Generic (HC.Dendrogram a)
+deriving instance Generic (HC.Dendrogram a)
 
-instance (A.ToJSON a, Generic a) => A.ToJSON (HC.Dendrogram a) where
+instance (A.ToJSON a) => A.ToJSON (HC.Dendrogram a) where
     toEncoding = A.genericToEncoding A.defaultOptions
-instance (A.FromJSON a, Generic a) => A.FromJSON (HC.Dendrogram a)
+instance (A.FromJSON a) => A.FromJSON (HC.Dendrogram a)
 
 instance (Ord a, Floating a) => Ord (Colour a) where
     compare x y = ((\a -> (channelRed a, channelGreen a, channelBlue a)) . toSRGB $ y)
