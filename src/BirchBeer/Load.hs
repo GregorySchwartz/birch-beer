@@ -42,7 +42,7 @@ loadLabelData (Delimiter delim) (LabelFile file) = do
     let toLabelMap :: Map.Map T.Text T.Text -> Map.Map Id Label
         toLabelMap m =
             Map.singleton
-                (Id $ Map.findWithDefault (error "No \"item\" column in label file.") "label" m)
+                (Id $ Map.findWithDefault (error "No \"item\" column in label file.") "item" m)
                 (Label $ Map.findWithDefault (error "No \"label\" column in label file.") "label" m)
 
     return . LabelMap . Map.unions . fmap toLabelMap . V.toList $ rows

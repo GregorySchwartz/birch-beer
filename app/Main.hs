@@ -35,7 +35,7 @@ data Options = Options
     , labelsFile :: Maybe String <?> "([Nothing] | FILE) The input file containing the label for each item, with \"item,label\" header."
     , minSize :: Maybe Int <?> "([1] | INT) The minimum size of a cluster. Defaults to 1."
     , maxStep :: Maybe Int <?> "([Nothing] | INT) Only keep clusters that are INT steps from the root. Defaults to all steps."
-    , drawLeaf :: Maybe String <?> "([DrawText] | DrawItem) How to draw leaves in the dendrogram. DrawText is the number of cells in that leaf if --labels-file is provided, otherwise the leaves are labeled by majority cell label in that leaf. DrawItem is the collection of cells represented by circles, consisting of: DrawItem DrawLabel, where each cell is colored by its label, DrawItem (DrawContinuous GENE), where each cell is colored by the expression of GENE (corresponding to a gene name in the input matrix), DrawItem (DrawThresholdContinuous [(GENE, DOUBLE)], where each cell is colored by the binary high / low expression of GENE based on DOUBLE and multiple GENEs can be used to combinatorically label cells (GENE1 high / GENE2 low, etc.), and DrawItem DrawSumContinuous, where each cell is colored by the sum of the post-normalized columns (use --normalization NoneNorm for UMI counts, default)."
+    , drawLeaf :: Maybe String <?> "([DrawText] | DrawItem DrawItemType) How to draw leaves in the dendrogram. DrawText is the number of cells in that leaf. DrawItem is the collection of cells represented by circles, consisting of: DrawItem DrawLabel, where each cell is colored by its label, DrawItem (DrawContinuous GENE), where each cell is colored by the expression of GENE (corresponding to a gene name in the input matrix), DrawItem (DrawThresholdContinuous [(GENE, DOUBLE)], where each cell is colored by the binary high / low expression of GENE based on DOUBLE and multiple GENEs can be used to combinatorically label cells (GENE1 high / GENE2 low, etc.), and DrawItem DrawSumContinuous, where each cell is colored by the sum of the post-normalized columns (use --normalization NoneNorm for UMI counts, default). The default is DrawText, unless --labels-file is provided, in which DrawItem DrawLabel is the default."
     , drawPie :: Maybe String <?> "([PieRing] | PieChart | PieNone) How to draw cell leaves in the dendrogram. PieRing draws a pie chart ring around the cells. PieChart only draws a pie chart instead of cells. PieNone only draws cells, no pie rings or charts."
     , drawMark :: Maybe String <?> "([MarkNone] | MarkModularity) How to draw annotations around each inner node in the tree. MarkNone draws nothing and MarkModularity draws a black circle representing the modularity at that node, darker black means higher modularity for that next split."
     , drawNodeNumber :: Bool <?> "Draw the node numbers on top of each node in the graph."
@@ -45,7 +45,14 @@ data Options = Options
     } deriving (Generic)
 
 modifiers :: Modifiers
-modifiers = lispCaseModifiers { shortNameModifier = firstLetter }
+modifiers = lispCaseModifiers { shortNameModifier = short }
+  where
+    short "minSize"              = Just 'M'
+    short "drawLeaf"             = Just 'L'
+    short "drawDendrogram"       = Just 'D'
+    short "drawNodeNumber"       = Just 'N'
+    short "drawColors"           = Just 'R'
+    short x                      = firstLetter x
 
 instance ParseRecord Options where
     parseRecord = parseRecordWithModifiers modifiers
@@ -62,7 +69,11 @@ main = do
         labelsFile'       = fmap LabelFile . unHelpful . labelsFile $ opts
         minSize'          = fmap MinClusterSize . unHelpful . minSize $ opts
         maxStep'          = fmap MaxStep . unHelpful . maxStep $ opts
-        drawLeaf'         = maybe DrawText read . unHelpful . drawLeaf $ opts
+        drawLeaf'         =
+            maybe (maybe DrawText (const (DrawItem DrawLabel)) labelsFile') read
+                . unHelpful
+                . drawLeaf
+                $ opts
         drawPie'          = maybe PieRing read . unHelpful . drawPie $ opts
         drawMark'         = maybe MarkNone read . unHelpful . drawMark $ opts
         drawNodeNumber'   = DrawNodeNumber . unHelpful . drawNodeNumber $ opts
@@ -125,7 +136,7 @@ main = do
                         error "Continuous options not supported here yet."
                         -- fmap (Just . getItemColorMapSumContinuous) processedSc
                     _                           -> return defaultGetItemColorMap
-                    
+
         -- Plot dendrogram.
         H.io $ do
             cm <- itemColorMap

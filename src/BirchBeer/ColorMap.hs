@@ -109,7 +109,7 @@ getLabelCustomColorMap :: CustomColors -> LabelMap -> LabelColorMap
 getLabelCustomColorMap (CustomColors cs) (LabelMap lm) =
     LabelColorMap
         . Map.fromList
-        . flip zip cs
+        . flip zip (cycle cs)
         . Set.toAscList
         . Set.fromList
         . Map.elems
