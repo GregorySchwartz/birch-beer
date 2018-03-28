@@ -12,18 +12,20 @@ Displays a hierarchical tree of clusters with colors, scaling, and more.
 module Main where
 
 -- Remote
+import Data.Colour.SRGB (sRGB24read)
 import Data.Maybe (fromMaybe)
 import Options.Generic
-import Data.Colour.SRGB (sRGB24read)
 import qualified Data.Aeson as A
+import qualified Data.Sparse.Common as S
+import qualified Data.Text as T
+import qualified Data.Vector as V
 import qualified Diagrams.Backend.Cairo as D
 import qualified Diagrams.Prelude as D
 import qualified H.Prelude as H
 
 -- Local
-import BirchBeer.ColorMap
 import BirchBeer.Load
-import BirchBeer.Plot
+import BirchBeer.MainDiagram
 import BirchBeer.Types
 import BirchBeer.Utility
 
@@ -91,77 +93,29 @@ main = do
         output'           =
             fromMaybe "dendrogram.pdf" . unHelpful . output $ opts
 
-        drawConfig        = DrawConfig
-                                drawLeaf'
-                                drawPie'
-                                drawNodeNumber'
-                                drawMaxNodeSize'
-                                drawNoScaleNodes'
+    dend <- loadDend input'
 
-    gr <- loadGraph minSize' maxStep' input'
+    let config :: Config T.Text (S.SpMatrix Double)
+        config = Config {_birchDelimiter = delimiter'
+                        , _birchLabelsFile = labelsFile'
+                        , _birchMinStep = minSize'
+                        , _birchMaxStep = maxStep'
+                        , _birchDrawLeaf = drawLeaf'
+                        , _birchDrawPie = drawPie'
+                        , _birchDrawMark = drawMark'
+                        , _birchDrawNodeNumber = drawNodeNumber'
+                        , _birchDrawMaxNodeSize = drawMaxNodeSize'
+                        , _birchDrawNoScaleNodes = drawNoScaleNodes'
+                        , _birchDrawColors = drawColors'
+                        , _birchDend = dend
+                        , _birchMat = Nothing
+                        }
 
-    -- Get the label map from either a file or from expression thresholds.
-    labelMap <- case drawLeaf' of
-                    (DrawItem (DrawThresholdContinuous gs)) ->
-                        error "Continuous options not supported here yet."
-                        -- fmap
-                        --     ( Just
-                        --     . getLabelMapThresholdContinuous
-                        --         (fmap (L.over L._1 Feature) gs)
-                        --     )
-                        --     processedSc
-                    _ -> sequence . fmap (loadLabelData delimiter') $ labelsFile'
+    plot <- mainDiagram config
 
-    H.withEmbeddedR H.defaultConfig $ H.runRegion $ do
-        -- Get the color of each label.
-        labelColorMap <- case drawColors' of
-                            Nothing   ->
-                                sequence $ fmap (getLabelColorMap Set1) labelMap
-                            (Just cs) ->
-                                return
-                                    $ fmap (getLabelCustomColorMap cs) labelMap
-
-        let defaultGetItemColorMap = do
-                lcm <- labelColorMap
-                lm  <- labelMap
-                return $ labelToItemColorMap lcm lm
-            itemColorMap =
-                case drawLeaf' of
-                    DrawItem (DrawContinuous x) ->
-                        error "Continuous options not supported here yet."
-                        -- fmap
-                        --     (Just . getItemColorMapContinuous (Feature x))
-                        --     processedSc
-                    DrawItem DrawSumContinuous  ->
-                        error "Continuous options not supported here yet."
-                        -- fmap (Just . getItemColorMapSumContinuous) processedSc
-                    _                           -> return defaultGetItemColorMap
-
-        -- Plot dendrogram.
-        H.io $ do
-            cm <- itemColorMap
-            legend <- case drawLeaf' of
-                        (DrawItem (DrawContinuous g)) ->
-                            error "Continuous options not supported here yet."
-                            -- fmap
-                            --     (Just . plotContinuousLegend (Feature g))
-                            --     processedSc
-                        (DrawItem DrawSumContinuous) ->
-                            error "Continuous options not supported here yet."
-                            -- fmap (Just . plotSumContinuousLegend) processedSc
-                        _ -> return $ fmap plotLabelLegend labelColorMap
-
-            let markColorMap = case drawMark' of
-                                MarkModularity -> Just $ getMarkColorMap gr
-                                _ -> Nothing
-
-            plot <- plotGraph legend drawConfig cm markColorMap gr
-
-            D.renderCairo
-                    output'
-                    (D.mkHeight 1000)
-                    plot
-
-        return ()
+    D.renderCairo
+            output'
+            (D.mkHeight 1000)
+            plot
 
     return ()

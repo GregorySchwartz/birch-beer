@@ -9,7 +9,7 @@ Collects the functions pertaining to loading labels for the tree.
 
 module BirchBeer.Load
     ( loadLabelData
-    , loadGraph
+    , loadDend
     ) where
 
 -- Remote
@@ -47,23 +47,6 @@ loadLabelData (Delimiter delim) (LabelFile file) = do
 
     return . LabelMap . Map.unions . fmap toLabelMap . V.toList $ rows
 
--- | Load a graph from a dendrogram structure.
-loadGraph
-    :: Maybe MinClusterSize
-    -> Maybe MaxStep
-    -> FilePath
-    -> IO (ClusterGraph T.Text)
-loadGraph minSize maxStep file = do
-    dend <- fmap (either error id . (\x -> A.eitherDecode x :: Either String (HC.Dendrogram (V.Vector T.Text)))) . B.readFile $ file
-
-    let dend' = (\ y
-                -> maybe
-                    y
-                    (flip sizeCutDendrogramV y . unMinClusterSize)
-                    minSize
-                )
-                . maybe dend (flip stepCutDendrogram dend . unMaxStep)
-                $ maxStep
-        gr    = dendrogramToGraph dend'
-
-    return gr
+-- | Load a dendrogram from a file.
+loadDend :: FilePath -> IO (HC.Dendrogram (V.Vector T.Text))
+loadDend file = fmap (either error id . A.eitherDecode) . B.readFile $ file
