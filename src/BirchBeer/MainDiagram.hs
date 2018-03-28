@@ -14,6 +14,7 @@ module BirchBeer.MainDiagram
 import Data.Maybe (fromMaybe)
 import qualified Control.Lens as L
 import qualified Data.Clustering.Hierarchical as HC
+import qualified Data.Vector as V
 import qualified Diagrams.Backend.Cairo as D
 import qualified Diagrams.Prelude as D
 import qualified H.Prelude as H
@@ -30,7 +31,7 @@ import BirchBeer.Utility
 mainDiagram
     :: (Eq a, Ord a, TreeItem a, MatrixLike b)
     => Config a b
-    -> IO (D.Diagram D.B, Maybe LabelColorMap, Maybe ItemColorMap, Maybe MarkColorMap, ClusterGraph a)
+    -> IO (D.Diagram D.B, Maybe LabelColorMap, Maybe ItemColorMap, Maybe MarkColorMap, HC.Dendrogram (V.Vector a), ClusterGraph a)
 mainDiagram config = do
     let labelMap'         = _birchLabelMap config
         minSize'          = _birchMinStep config
@@ -106,4 +107,4 @@ mainDiagram config = do
     -- | Get the entire diagram.
     plot <- plotGraph legend drawConfig itemColorMap markColorMap gr
 
-    return (plot, labelColorMap, itemColorMap, markColorMap, gr)
+    return (plot, labelColorMap, itemColorMap, markColorMap, dend', gr)

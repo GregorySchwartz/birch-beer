@@ -126,7 +126,7 @@ main = do
                         , _birchMat = Nothing
                         }
 
-    (plot, _, _, _, _) <- mainDiagram config
+    (plot, _, _, _, _, _) <- mainDiagram config
 
     D.renderCairo
             output'
