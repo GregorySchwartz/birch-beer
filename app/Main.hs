@@ -15,6 +15,7 @@ module Main where
 import Data.Colour.SRGB (sRGB24read)
 import Data.Maybe (fromMaybe)
 import Options.Generic
+import qualified Control.Lens as L
 import qualified Data.Aeson as A
 import qualified Data.Sparse.Common as S
 import qualified Data.Text as T
@@ -25,6 +26,7 @@ import qualified H.Prelude as H
 
 -- Local
 import BirchBeer.Load
+import BirchBeer.ColorMap
 import BirchBeer.MainDiagram
 import BirchBeer.Types
 import BirchBeer.Utility
@@ -94,10 +96,23 @@ main = do
             fromMaybe "dendrogram.pdf" . unHelpful . output $ opts
 
     dend <- loadDend input'
+    
+    -- Get the label map from either a file or from expression thresholds.
+    labelMap <- case drawLeaf' of
+                    (DrawItem (DrawThresholdContinuous gs)) ->
+                        error "Threshold not supported here."
+                        -- fmap
+                        --     ( Just
+                        --     . getLabelMapThresholdContinuous
+                        --         (fmap (L.over L._1 Feature) gs)
+                        --     . fromMaybe (error "Requires matrix.")
+                        --     )
+                        --     mat
+                    _ -> sequence . fmap (loadLabelData delimiter') $ labelsFile'
+
 
     let config :: Config T.Text (S.SpMatrix Double)
-        config = Config {_birchDelimiter = delimiter'
-                        , _birchLabelsFile = labelsFile'
+        config = Config { _birchLabelMap = labelMap
                         , _birchMinStep = minSize'
                         , _birchMaxStep = maxStep'
                         , _birchDrawLeaf = drawLeaf'
@@ -111,7 +126,7 @@ main = do
                         , _birchMat = Nothing
                         }
 
-    plot <- mainDiagram config
+    (plot, _, _, _, _) <- mainDiagram config
 
     D.renderCairo
             output'

@@ -64,6 +64,7 @@ executable birch-beer
                      , diagrams-cairo
                      , diagrams-lib
                      , inline-r
+                     , lens
                      , optparse-generic
                      , sparse-linear-algebra
                      , text

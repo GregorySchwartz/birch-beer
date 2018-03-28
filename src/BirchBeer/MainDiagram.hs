@@ -29,10 +29,10 @@ import BirchBeer.Utility
 -- requires withEmbeddedR to start an instance before calling this function.
 mainDiagram
     :: (Eq a, Ord a, TreeItem a, MatrixLike b)
-    => Config a b -> IO (D.Diagram D.B)
+    => Config a b
+    -> IO (D.Diagram D.B, Maybe LabelColorMap, Maybe ItemColorMap, Maybe MarkColorMap, ClusterGraph a)
 mainDiagram config = do
-    let delimiter'        = _birchDelimiter config
-        labelsFile'       = _birchLabelsFile config
+    let labelMap'         = _birchLabelMap config
         minSize'          = _birchMinStep config
         maxStep'          = _birchMaxStep config
         drawLeaf'         = _birchDrawLeaf config
@@ -65,26 +65,14 @@ mainDiagram config = do
                                 drawMaxNodeSize'
                                 drawNoScaleNodes'
 
-    -- Get the label map from either a file or from expression thresholds.
-    labelMap <- case drawLeaf' of
-                    (DrawItem (DrawThresholdContinuous gs)) ->
-                        fmap
-                            ( Just
-                            . getLabelMapThresholdContinuous
-                                (fmap (L.over L._1 Feature) gs)
-                            . fromMaybe (error "Requires matrix.")
-                            )
-                            mat
-                    _ -> sequence . fmap (loadLabelData delimiter') $ labelsFile'
-
     -- Get the color of each label.
     labelColorMap <- H.runRegion $ do
         case drawColors' of
             Nothing   ->
-                sequence $ fmap (getLabelColorMap Set1) labelMap
+                sequence $ fmap (getLabelColorMap Set1) labelMap'
             (Just cs) ->
                 return
-                    $ fmap (getLabelCustomColorMap cs) labelMap
+                    $ fmap (getLabelCustomColorMap cs) labelMap'
 
         -- | Get the mark color map.
     let markColorMap = case drawMark' of
@@ -93,7 +81,7 @@ mainDiagram config = do
         defaultGetItemColorMap :: Maybe ItemColorMap
         defaultGetItemColorMap = do
             lcm <- labelColorMap
-            lm  <- labelMap
+            lm  <- labelMap'
             return $ labelToItemColorMap lcm lm
                         
     -- | Get the item color map.
@@ -116,4 +104,6 @@ mainDiagram config = do
                 _ -> return $ fmap plotLabelLegend labelColorMap
 
     -- | Get the entire diagram.
-    plotGraph legend drawConfig itemColorMap markColorMap gr
+    plot <- plotGraph legend drawConfig itemColorMap markColorMap gr
+
+    return (plot, labelColorMap, itemColorMap, markColorMap, gr)

@@ -115,8 +115,7 @@ data DrawConfig = DrawConfig
     } deriving (Read,Show)
 
 data Config a b = Config
-    { _birchDelimiter        :: Delimiter
-    , _birchLabelsFile       :: Maybe LabelFile
+    { _birchLabelMap         :: Maybe LabelMap
     , _birchMinStep          :: Maybe MinClusterSize
     , _birchMaxStep          :: Maybe MaxStep
     , _birchDrawLeaf         :: DrawLeaf
