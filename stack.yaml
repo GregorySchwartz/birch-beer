@@ -48,6 +48,10 @@ extra-deps:
 - plots-0.1.0.2
 - streaming-cassava-0.1.0.1
 - streaming-with-0.2.1.1
+- typed-spreadsheet-1.1.2
+- diagrams-gtk-1.4
+- gtk-0.14.7
+- gio-0.13.4.1
 - git: https://github.com/GregorySchwartz/hierarchical-clustering-diagrams.git
   commit: b92d8cc9b5275df38198ede27b58f7e35aaf69d1
 

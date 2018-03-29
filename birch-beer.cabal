@@ -16,11 +16,12 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   exposed-modules:     BirchBeer.Types
-                     , BirchBeer.Utility
-                     , BirchBeer.Load
-                     , BirchBeer.Plot
                      , BirchBeer.ColorMap
+                     , BirchBeer.Interactive
+                     , BirchBeer.Load
                      , BirchBeer.MainDiagram
+                     , BirchBeer.Plot
+                     , BirchBeer.Utility
   build-depends:       base >= 4.7 && < 5
                      , SVGFonts
                      , aeson
@@ -32,10 +33,12 @@ library
                      , diagrams
                      , diagrams-cairo
                      , diagrams-graphviz
+                     , diagrams-gtk
                      , diagrams-lib
                      , fgl
                      , foldl
                      , graphviz
+                     , gtk
                      , hierarchical-clustering
                      , hierarchical-clustering-diagrams
                      , hierarchical-spectral-clustering
@@ -44,10 +47,12 @@ library
                      , mtl
                      , palette
                      , plots
+                     , safe
                      , sparse-linear-algebra
                      , split
                      , text
                      , text-show
+                     , typed-spreadsheet
                      , vector
   ghc-options:         -O2
   default-language:    Haskell2010

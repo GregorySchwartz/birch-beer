@@ -12,6 +12,7 @@ Displays a hierarchical tree of clusters with colors, scaling, and more.
 module Main where
 
 -- Remote
+import Control.Monad (when)
 import Data.Colour.SRGB (sRGB24read)
 import Data.Maybe (fromMaybe)
 import Options.Generic
@@ -27,6 +28,7 @@ import qualified H.Prelude as H
 -- Local
 import BirchBeer.Load
 import BirchBeer.ColorMap
+import BirchBeer.Interactive
 import BirchBeer.MainDiagram
 import BirchBeer.Types
 import BirchBeer.Utility
@@ -46,6 +48,7 @@ data Options = Options
     , drawMaxNodeSize :: Maybe Double <?> "([72] | DOUBLE) The max node size when drawing the graph. 36 is the theoretical default, but here 72 makes for thicker branches."
     , drawNoScaleNodes :: Bool <?> "Do not scale inner node size when drawing the graph. Instead, uses draw-max-node-size as the size of each node and is highly recommended to change as the default may be too large for this option."
     , drawColors :: Maybe String <?> "([Nothing] | COLORS) Custom colors for the labels. Will repeat if more labels than provided colors. For instance: --draw-colors \"[\\\"#e41a1c\\\", \\\"#377eb8\\\"]\""
+    , interactive :: Bool <?> "Display interactive tree."
     } deriving (Generic)
 
 modifiers :: Modifiers
@@ -56,6 +59,7 @@ modifiers = lispCaseModifiers { shortNameModifier = short }
     short "drawDendrogram"       = Just 'D'
     short "drawNodeNumber"       = Just 'N'
     short "drawColors"           = Just 'R'
+    short "interactive"          = Just 'I'
     short x                      = firstLetter x
 
 instance ParseRecord Options where
@@ -132,5 +136,7 @@ main = do
             output'
             (D.mkHeight 1000)
             plot
+
+    when (unHelpful . interactive $ opts) $ interactiveDiagram dend labelMap (Nothing :: Maybe (S.SpMatrix Double))
 
     return ()

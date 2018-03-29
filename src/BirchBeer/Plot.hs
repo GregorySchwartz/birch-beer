@@ -327,9 +327,9 @@ getGraphLeafItems (ClusterGraph gr) =
 
 -- | Get the size of a leaf for graph plotting. Determines the size based on the
 -- diameter of each node (36) and the maximum size of a cluster.
-getScaledLeafSize :: Int -> Seq.Seq a -> Double
-getScaledLeafSize maxLen =
-    isTo (fromIntegral . floor . sqrt . fromIntegral $ maxLen) 36
+getScaledLeafSize :: Int -> Double -> Seq.Seq a -> Double
+getScaledLeafSize maxLen maxSize =
+    isTo (fromIntegral . floor . sqrt . fromIntegral $ maxLen) (maxSize / 2)
         . fromIntegral
         . floor
         . sqrt
@@ -440,8 +440,9 @@ drawGraphNode opts@(DrawConfig { _drawLeaf = (DrawItem _) }) cm _ gr (n, Just it
     pieDia PieNone     = mempty
     pieDia x           = scaleUToY scaleVal $ drawPieItem x cm items
     scaleVal = if unDrawNoScaleNodesFlag . _drawNoScaleNodesFlag $ opts
-                then unDrawMaxNodeSize . _drawMaxNodeSize $ opts
-                else getScaledLeafSize maxClusterSize' items
+                then maxNodeSize
+                else getScaledLeafSize maxClusterSize' maxNodeSize  items
+    maxNodeSize = unDrawMaxNodeSize . _drawMaxNodeSize $ opts
     maxClusterSize' = maxClusterSize . unClusterGraph $ gr
     textDia True  = text (show n) # fc black
     textDia False = mempty
