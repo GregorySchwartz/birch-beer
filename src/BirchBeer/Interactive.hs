@@ -14,18 +14,21 @@ module BirchBeer.Interactive
     ) where
 
 -- Remote
+import Data.Bool (bool)
 import Data.Colour.SRGB (sRGB24reads)
 import Data.Maybe (catMaybes)
 import Safe (headMay)
 import Text.Read (readMaybe)
+import System.IO.Temp (withTempFile)
 import qualified Control.Lens as L
 import qualified Data.Clustering.Hierarchical as HC
 import qualified Data.Text as T
 import qualified Data.Vector as V
 import qualified Diagrams.Backend.Cairo as D
-import qualified Diagrams.Backend.Gtk
+import qualified Diagrams.Backend.Gtk as D
 import qualified Diagrams.Prelude as D
 import qualified Graphics.UI.Gtk as Gtk
+import qualified System.IO as IO
 import qualified Typed.Spreadsheet as TS
 
 -- Local
@@ -41,13 +44,13 @@ interactiveDiagram dend labelMap mat = graphicalUI' "birch-beer" $ do
         fmap (MinClusterSize . round) $ TS.spinButtonAt 1 "Minimum cluster size" 1
     maxStep' <- fmap (MaxStep . round)
                $ TS.spinButtonAt 1000 "Maximum number of steps from root" 1
-    drawLeaf' <- TS.radioButton
-                    "Leaf type"
-                    DrawText
-                    [ DrawItem DrawLabel
-                    , DrawItem DrawSumContinuous
-                    , DrawItem (DrawContinuous "GENE")
-                    ]
+    drawLeafTemp <- TS.radioButton
+                        "Leaf type"
+                        DrawText
+                        [ DrawItem DrawLabel
+                        , DrawItem DrawSumContinuous
+                        , DrawItem (DrawContinuous "GENE")
+                        ]
     drawContinuousGene' <- TS.entry "GENE for DrawItem DrawContinuous"
     drawPie' <- TS.radioButton "Leaf shape" PieRing [PieChart, PieNone]
     drawMark' <- TS.radioButton "Node mark" MarkNone [MarkModularity]
@@ -71,7 +74,11 @@ interactiveDiagram dend labelMap mat = graphicalUI' "birch-beer" $ do
                  $ TS.entryAt "[]" "Custom node colors [\"#e41a1c\", \"#377eb8\"]"
 
     return $
-        let config = Config { _birchLabelMap = labelMap
+        let drawLeaf' = case drawLeafTemp of
+                            DrawItem (DrawContinuous _) ->
+                                DrawItem (DrawContinuous drawContinuousGene')
+                            x -> x
+            config = Config { _birchLabelMap = labelMap
                             , _birchMinStep = Just minSize'
                             , _birchMaxStep = Just maxStep'
                             , _birchDrawLeaf = drawLeaf'
@@ -103,11 +110,72 @@ graphicalUI' = TS.ui setupGraphical processGraphicalEvent
     processGraphicalEvent :: Gtk.DrawingArea -> IO (D.Diagram D.Cairo) -> IO ()
     processGraphicalEvent drawingArea diagramIO = do
         diagram <- diagramIO
+
         drawWindow <- Gtk.widgetGetDrawWindow drawingArea
         (w, h) <- Gtk.widgetGetSize drawingArea
 
         let w' = fromIntegral (w :: Int) / 2
-        let h' = fromIntegral (h :: Int) / 2
-        let diagram' = diagram D.# D.reflectY D.# D.translate (D.r2 (w', h'))
+            h' = fromIntegral (h :: Int) / 2
+            minSize = fromIntegral $ min w h
+            maxIsWidth =
+                if max (D.width diagram) (D.height diagram) == D.width diagram
+                    then True
+                    else False
+            resizeFunc =
+                bool (D.scaleUToY minSize) (D.scaleUToY minSize) maxIsWidth
+            diagram' = diagram
+                   D.# D.toGtkCoords
+                   D.# resizeFunc
+                   D.# D.center
+                   D.# D.moveTo (D.p2 (w', h'))
 
-        Diagrams.Backend.Gtk.renderToGtk drawWindow diagram'
+        D.renderToGtk drawWindow diagram'
+
+-- | Build a `Diagram`-based user interface using an IO updatable. Draws to a
+-- png first.
+graphicalUIPng'
+    :: T.Text
+    -> TS.Updatable (IO (D.Diagram D.Cairo))
+    ->
+       -- ^ Program logic
+       IO ()
+graphicalUIPng' title updatable = withTempFile "." "temp_tree.png" $ \file h -> do
+    TS.ui setupGraphical (processGraphicalEvent file h) title updatable
+  where
+    setupGraphical :: Gtk.HBox -> IO Gtk.DrawingArea
+    setupGraphical hBox = do
+        drawingArea <- Gtk.drawingAreaNew
+        Gtk.boxPackStart hBox drawingArea Gtk.PackGrow 0
+        return drawingArea
+    processGraphicalEvent :: FilePath -> IO.Handle -> Gtk.DrawingArea -> IO (D.Diagram D.Cairo) -> IO ()
+    processGraphicalEvent file h drawingArea diagramIO = do
+        dia <- diagramIO
+
+        D.renderCairo
+            file
+            (D.mkHeight 1000)
+            dia
+
+        IO.hClose h
+
+        diagram <- fmap (either mempty D.image) $ D.loadImageEmb file
+
+        drawWindow <- Gtk.widgetGetDrawWindow drawingArea
+        (w, h) <- Gtk.widgetGetSize drawingArea
+
+        let w' = fromIntegral (w :: Int) / 2
+            h' = fromIntegral (h :: Int) / 2
+            minSize = fromIntegral $ min w h
+            maxIsWidth =
+                if max (D.width diagram) (D.height diagram) == D.width diagram
+                    then True
+                    else False
+            resizeFunc =
+                bool (D.scaleUToY minSize) (D.scaleUToY minSize) maxIsWidth
+            diagram' = diagram
+                   D.# D.toGtkCoords
+                   D.# resizeFunc
+                   D.# D.center
+                   D.# D.moveTo (D.p2 (w', h'))
+
+        D.renderToGtk drawWindow diagram'

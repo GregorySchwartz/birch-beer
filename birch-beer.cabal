@@ -42,7 +42,6 @@ library
                      , hierarchical-clustering
                      , hierarchical-clustering-diagrams
                      , hierarchical-spectral-clustering
-                     , inline-r
                      , lens
                      , mtl
                      , palette
@@ -50,6 +49,7 @@ library
                      , safe
                      , sparse-linear-algebra
                      , split
+                     , temporary
                      , text
                      , text-show
                      , typed-spreadsheet
@@ -68,7 +68,6 @@ executable birch-beer
                      , diagrams
                      , diagrams-cairo
                      , diagrams-lib
-                     , inline-r
                      , lens
                      , optparse-generic
                      , sparse-linear-algebra

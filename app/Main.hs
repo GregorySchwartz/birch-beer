@@ -23,7 +23,6 @@ import qualified Data.Text as T
 import qualified Data.Vector as V
 import qualified Diagrams.Backend.Cairo as D
 import qualified Diagrams.Prelude as D
-import qualified H.Prelude as H
 
 -- Local
 import BirchBeer.Load
@@ -100,7 +99,7 @@ main = do
             fromMaybe "dendrogram.pdf" . unHelpful . output $ opts
 
     dend <- loadDend input'
-    
+
     -- Get the label map from either a file or from expression thresholds.
     labelMap <- case drawLeaf' of
                     (DrawItem (DrawThresholdContinuous gs)) ->

@@ -23,10 +23,10 @@ module BirchBeer.ColorMap
 -- Remote
 import Data.Function (on)
 import Data.Int (Int32)
-import Data.Maybe (fromMaybe)
+import Data.Maybe (fromMaybe, isNothing)
 import Diagrams.Prelude
-import Language.R as R
-import Language.R.QQ (r)
+-- import Language.R as R
+-- import Language.R.QQ (r)
 import qualified Control.Foldl as Fold
 import qualified Control.Lens as L
 import qualified Data.Clustering.Hierarchical as HC
@@ -61,37 +61,58 @@ lchPalette n = fmap
                 [30, 30 + (360 / fromIntegral (n - 1)) .. fromIntegral 390]
 
 -- | Get the colors of each label using R to interpolate additional colors.
-getLabelColorMap :: Palette -> LabelMap -> R.R s LabelColorMap
-getLabelColorMap palette (LabelMap lm) = do
-    let labels    = Set.toAscList . Set.fromList . Map.elems $ lm
-        labelsLen = if odd $ List.genericLength labels
-                        then List.genericLength labels :: Int32
-                        else List.genericLength labels + 1 :: Int32
+-- getLabelColorMapR :: Palette -> LabelMap -> R.R s LabelColorMap
+-- getLabelColorMapR palette (LabelMap lm) = do
+--     let labels    = Set.toAscList . Set.fromList . Map.elems $ lm
+--         labelsLen = if odd $ List.genericLength labels
+--                         then List.genericLength labels :: Int32
+--                         else List.genericLength labels + 1 :: Int32
 
-    colorsHex <-
-        case palette of
-            -- From https://stackoverflow.com/questions/8197559/emulate-ggplot2-default-color-palette
-            Hcl  -> [r| hues = seq(15, 375, length = labelsLen_hs + 1)
-                        hcl(h = hues, l = 65, c = 100)[1:labelsLen_hs]
-                    |]
-            Set1 ->
-                if labelsLen > 9
-                    then
-                        [r| library(RColorBrewer)
-                            colorRampPalette(brewer.pal(9, "Set1"))(labelsLen_hs)
-                        |]
-                    else
-                        [r| library(RColorBrewer)
-                            brewer.pal(labelsLen_hs, "Set1")
-                        |]
+--     colorsHex <-
+--         case palette of
+--             -- From https://stackoverflow.com/questions/8197559/emulate-ggplot2-default-color-palette
+--             Hcl  -> [r| hues = seq(15, 375, length = labelsLen_hs + 1)
+--                         hcl(h = hues, l = 65, c = 100)[1:labelsLen_hs]
+--                     |]
+--             Set1 ->
+--                 if labelsLen > 9
+--                     then
+--                         [r| library(RColorBrewer)
+--                             colorRampPalette(brewer.pal(9, "Set1"))(labelsLen_hs)
+--                         |]
+--                     else
+--                         [r| library(RColorBrewer)
+--                             brewer.pal(labelsLen_hs, "Set1")
+--                         |]
 
-    let colors = fmap Colour.sRGB24read . R.dynSEXP $ colorsHex
+--     let colors = fmap Colour.sRGB24read . R.dynSEXP $ colorsHex
 
-    return
-        . LabelColorMap
-        . Map.fromList
-        . flip zip colors
-        $ labels
+--     return
+--         . LabelColorMap
+--         . Map.fromList
+--         . flip zip colors
+--         $ labels
+
+-- | Get the colors of each label using interpolation.
+getLabelColorMap :: Palette -> LabelMap -> LabelColorMap
+getLabelColorMap Set1 (LabelMap lm) =
+    LabelColorMap . Map.fromList . flip zip colors . Set.toAscList $ labels
+  where
+    colors = interpColors (Set.size labels) $ Brewer.brewerSet Brewer.Set1 9
+    labels = Set.fromList . Map.elems $ lm
+getLabelColorMap _ _ = error "Only the Set1 palette is supported now."
+
+-- | Interpolate n colors from a list of colors using linear piecewise
+-- interpolation. Inspired by ertes-w.
+interpColors :: Int -> [Colour Double] -> [Colour Double]
+interpColors n xs0 = if n <= length xs0 then take n xs0 else take n (go 0 xs0)
+  where
+    di = fromIntegral (length xs0 - 1) / fromIntegral (n - 1)
+    go _ [x] = [x]
+    go i xs'@(x1 : xs@(x2 : _))
+        | i > 1 = go (i - 1) xs
+        | otherwise = (blend i x2 x1) : go (i + di) xs'
+    go _ _ = []
 
 -- | Get the colors of each label.
 getLabelColorMap9 :: LabelMap -> LabelColorMap
@@ -131,22 +152,23 @@ getContinuousColor =
                     <*> Fold.maximum
             )
   where
-    getExist = fromMaybe (error "Feature does not exist or no cells found.") 
+    getExist = fromMaybe (error "Feature does not exist or no cells found.")
 
 -- | Get the colors of each item, where the color is determined by expression.
 getItemColorMapContinuous :: (MatrixLike a) => Feature -> a -> ItemColorMap
-getItemColorMapContinuous g mat =
-    ItemColorMap
-        . Map.fromList
-        . zip (fmap Id . V.toList . getRowNames $ mat)
-        . getContinuousColor
-        . S.toDenseListSV
-        . flip S.extractCol col
-        . getMatrix
-        $ mat
+getItemColorMapContinuous g mat
+    | isNothing col = ItemColorMap Map.empty
+    | otherwise = ItemColorMap
+                . Map.fromList
+                . zip (fmap Id . V.toList . getRowNames $ mat)
+                . getContinuousColor
+                . S.toDenseListSV
+                . flip S.extractCol (colErr col)
+                . getMatrix
+                $ mat
   where
-    col = fromMaybe (error $ "Feature " <> T.unpack (unFeature g) <> " does not exist.")
-        . V.elemIndex g
+    colErr = fromMaybe (error $ "Feature " <> T.unpack (unFeature g) <> " does not exist.")
+    col = V.elemIndex g
         . fmap Feature
         . getColNames
         $ mat
@@ -157,12 +179,13 @@ getItemColorMapContinuous g mat =
 getLabelMapThresholdContinuous
     :: (MatrixLike a)
     => [(Feature, Double)] -> a -> LabelMap
-getLabelMapThresholdContinuous gs mat =
-    LabelMap
-        . Map.fromList
-        . zip (fmap Id . V.toList . getRowNames $ mat)
-        . getCombinatoricLabels
-        $ gs'
+getLabelMapThresholdContinuous gs mat
+    | any (isNothing . getCol . fst) gs = LabelMap Map.empty
+    | otherwise = LabelMap
+                . Map.fromList
+                . zip (fmap Id . V.toList . getRowNames $ mat)
+                . getCombinatoricLabels
+                $ gs'
   where
     getCombinatoricLabels :: [(Feature, Double)] -> [Label]
     getCombinatoricLabels =
@@ -172,12 +195,12 @@ getLabelMapThresholdContinuous gs mat =
     getCombinatoricLabelFeature g v =
         fmap (\x -> unFeature g <> " " <> if x > v then "high" else "low")
             . S.toDenseListSV
-            . flip S.extractCol (getCol g)
+            . flip S.extractCol (colErr g $ getCol g)
             . getMatrix
             $ mat
     gs' = List.sortBy (compare `on` fst) gs
-    getCol g = fromMaybe (error $ "Feature " <> T.unpack (unFeature g) <> " does not exist.")
-             . V.elemIndex g
+    colErr g = fromMaybe (error $ "Feature " <> T.unpack (unFeature g) <> " does not exist.")
+    getCol g = V.elemIndex g
              . fmap Feature
              . getColNames
              $ mat

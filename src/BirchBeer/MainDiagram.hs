@@ -17,7 +17,6 @@ import qualified Data.Clustering.Hierarchical as HC
 import qualified Data.Vector as V
 import qualified Diagrams.Backend.Cairo as D
 import qualified Diagrams.Prelude as D
-import qualified H.Prelude as H
 
 -- Local
 import BirchBeer.ColorMap
@@ -67,16 +66,12 @@ mainDiagram config = do
                                 drawNoScaleNodes'
 
     -- Get the color of each label.
-    labelColorMap <- H.runRegion $ do
-        case drawColors' of
-            Nothing   ->
-                sequence $ fmap (getLabelColorMap Set1) labelMap'
-            (Just cs) ->
-                return
-                    $ fmap (getLabelCustomColorMap cs) labelMap'
-
+    let labelColorMap =
+            case drawColors' of
+                Nothing   -> fmap (getLabelColorMap Set1) labelMap'
+                (Just cs) -> fmap (getLabelCustomColorMap cs) labelMap'
         -- | Get the mark color map.
-    let markColorMap = case drawMark' of
+        markColorMap = case drawMark' of
                         MarkModularity -> Just $ getMarkColorMap gr
                         _ -> Nothing
         defaultGetItemColorMap :: Maybe ItemColorMap

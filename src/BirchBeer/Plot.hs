@@ -29,7 +29,7 @@ import qualified Data.Colour.Palette.BrewerSet as Brewer
 import Data.Colour.SRGB (RGB (..), toSRGB)
 import Data.Function (on)
 import Data.List (nub, sort, sortBy, foldl1', transpose)
-import Data.Maybe (fromMaybe)
+import Data.Maybe (fromMaybe, isNothing)
 import Data.Tuple (swap)
 import Diagrams.Backend.Cairo
 import Diagrams.Dendrogram (dendrogramCustom, Width(..))
@@ -270,9 +270,11 @@ plotLabelLegend = flip (drawLegend emptyBox) legendOpts
 -- | Get the legend for a feature. Bar from
 -- https://archives.haskell.org/projects.haskell.org/diagrams/blog/2013-12-03-Palette1.html
 plotContinuousLegend :: (MatrixLike a) => Feature -> a -> Diagram B
-plotContinuousLegend g mat =
-    rotateBy (3 / 4)
-        $ renderColourBar cbOpts cm (fromMaybe 0 minVal, fromMaybe 0 maxVal) 100
+plotContinuousLegend g mat
+    | isNothing col = mempty
+    | otherwise = rotateBy (3 / 4)
+                $ renderColourBar
+                    cbOpts cm (fromMaybe 0 minVal, fromMaybe 0 maxVal) 100
   where
     cbOpts :: ColourBar B Double
     cbOpts = over tickLabelStyle (font "Arial")
@@ -281,11 +283,11 @@ plotContinuousLegend g mat =
     cm =
         colourMap . zip [1..] . fmap (\x -> sRGB 1 (1 - x) (1 - x)) $ [0,0.1..1]
     (minVal, maxVal) = Fold.fold ((,) <$> Fold.minimum <*> Fold.maximum)
-                     . flip S.extractCol col
+                     . flip S.extractCol (colErr col)
                      . getMatrix
                      $ mat
-    col = fromMaybe (error $ "Feature " <> T.unpack (unFeature g) <> " does not exist.")
-        . V.elemIndex g
+    colErr = fromMaybe (error $ "Feature " <> T.unpack (unFeature g) <> " does not exist.")
+    col = V.elemIndex g
         . fmap Feature
         . getColNames
         $ mat
