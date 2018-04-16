@@ -49,7 +49,7 @@ mainDiagram config = do
         dend' = (\ y
                 -> maybe
                     y
-                    (flip sizeCutDendrogramV y . unMinClusterSize)
+                    (flip sizeCutDendrogram y . unMinClusterSize)
                     minSize'
                 )
                 . maybe dend (flip stepCutDendrogram dend . unMaxStep)

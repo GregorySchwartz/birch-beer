@@ -13,7 +13,6 @@ module BirchBeer.Utility
     , isTo
     , stepCutDendrogram
     , sizeCutDendrogram
-    , sizeCutDendrogramV
     , dendrogramToGraph
     , getGraphLeaves
     , getGraphLeavesWithParents
@@ -92,31 +91,6 @@ sizeCutDendrogram n (HC.Branch d l r) =
         else HC.Branch d (sizeCutDendrogram n l) (sizeCutDendrogram n r)
   where
     lengthElements = sum . fmap length . HC.elements
-
--- | Cut a dendrogram based off of the minimum size of a leaf. For vectors only,
--- faster for length calculation.
-sizeCutDendrogramV :: Int
-                   -> HC.Dendrogram (V.Vector a)
-                   -> HC.Dendrogram (V.Vector a)
-sizeCutDendrogramV _ (HC.Leaf x) = HC.Leaf x
-sizeCutDendrogramV n (HC.Branch d l@(HC.Leaf ls) r@(HC.Leaf rs)) =
-    if V.length ls < n || V.length rs < n
-        then HC.Leaf $ ls <> rs
-        else HC.Branch d (sizeCutDendrogram n l) (sizeCutDendrogram n r)
-sizeCutDendrogramV n (HC.Branch d l@(HC.Leaf ls) r) =
-    if V.length ls < n
-        then HC.Leaf . mconcat $ ls : HC.elements r
-        else HC.Branch d l (sizeCutDendrogram n r)
-sizeCutDendrogramV n (HC.Branch d l r@(HC.Leaf rs)) =
-    if V.length rs < n
-        then HC.Leaf . mconcat $ rs : HC.elements l
-        else HC.Branch d (sizeCutDendrogram n l) (HC.Leaf rs)
-sizeCutDendrogramV n (HC.Branch d l r) =
-    if lengthElements l + lengthElements r < n
-        then HC.Leaf . mconcat $ HC.elements l <> HC.elements r
-        else HC.Branch d (sizeCutDendrogram n l) (sizeCutDendrogram n r)
-  where
-    lengthElements = sum . fmap V.length . HC.elements
 
 -- | Convert a dendrogram with height as Q values to a graph for
 -- plotting with leaves containing all information. This also means that the

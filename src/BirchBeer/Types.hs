@@ -17,7 +17,8 @@ module BirchBeer.Types where
 import Control.DeepSeq
 import Data.Colour (AlphaColour)
 import Data.Colour.Palette.BrewerSet (Kolor)
-import Data.Colour.SRGB (Colour (..), RGB (..), toSRGB)
+import Data.Colour.SRGB (Colour (..), RGB (..))
+import Data.Colour.SRGB.Linear (toRGB)
 import Data.Map.Strict (Map)
 import GHC.Generics (Generic)
 import TextShow (showt)
@@ -156,6 +157,7 @@ instance (A.ToJSON a) => A.ToJSON (HC.Dendrogram a) where
     toEncoding = A.genericToEncoding A.defaultOptions
 instance (A.FromJSON a) => A.FromJSON (HC.Dendrogram a)
 
-instance (Ord a, Floating a) => Ord (Colour a) where
-    compare x y = ((\a -> (channelRed a, channelGreen a, channelBlue a)) . toSRGB $ y)
-        `compare` ((\a -> (channelRed a, channelGreen a, channelBlue a)) . toSRGB $ x)
+deriving instance (Eq a, Ord a, Fractional a) => Ord (RGB a)
+
+instance (Eq a, Ord a, Fractional a) => Ord (Colour a) where
+    compare x y = toRGB y `compare` toRGB x
