@@ -79,7 +79,7 @@ mainDiagram config = do
             lcm <- labelColorMap
             lm  <- labelMap'
             return $ labelToItemColorMap lcm lm
-                        
+
     -- | Get the item color map.
     itemColorMap <-
         case drawLeaf' of
@@ -88,7 +88,7 @@ mainDiagram config = do
             DrawItem DrawSumContinuous  ->
                 fmap (fmap getItemColorMapSumContinuous) mat
             _                           -> return defaultGetItemColorMap
-                        
+
     -- | Get the legend of the diagram.
     legend <- case drawLeaf' of
                 (DrawItem (DrawContinuous x)) ->
