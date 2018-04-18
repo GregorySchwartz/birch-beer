@@ -11,7 +11,8 @@ module BirchBeer.MainDiagram
     ) where
 
 -- Remote
-import Data.Maybe (fromMaybe)
+import Data.List (foldl')
+import Data.Maybe (fromMaybe, isJust)
 import qualified Control.Lens as L
 import qualified Data.Clustering.Hierarchical as HC
 import qualified Data.Vector as V
@@ -22,6 +23,7 @@ import qualified Diagrams.Prelude as D
 import BirchBeer.ColorMap
 import BirchBeer.Load
 import BirchBeer.Plot
+import BirchBeer.Stopping
 import BirchBeer.Types
 import BirchBeer.Utility
 
@@ -32,9 +34,31 @@ mainDiagram
     => Config a b
     -> IO (D.Diagram D.B, Maybe LabelColorMap, Maybe ItemColorMap, Maybe MarkColorMap, HC.Dendrogram (V.Vector a), ClusterGraph a)
 mainDiagram config = do
-    let labelMap'         = _birchLabelMap config
-        minSize'          = _birchMinStep config
+    let dend              = _birchDend config
+        labelMap'         = _birchLabelMap config
+        smartCutoff'      = _birchSmartCutoff config
         maxStep'          = _birchMaxStep config
+        minSize'          =
+            case (fmap unSmartCutoff smartCutoff', _birchMinSize config) of
+                (Just x, Just _)   -> Just
+                                    . MinClusterSize
+                                    . round
+                                    . (2 **)
+                                    . smartCut x (Just . logBase 2 . getSize)
+                                    $ dend
+                otherwise          -> _birchMinSize config
+        maxProportion'    =
+            case (fmap unSmartCutoff smartCutoff', _birchMaxProportion config) of
+                (Just x, Just _)   -> Just
+                                    . MaxProportion
+                                    . (2 **)
+                                    $ smartCut x getProportion dend
+                otherwise          -> _birchMaxProportion config
+        minDistance'      =
+            case (fmap unSmartCutoff smartCutoff', _birchMinDistance config) of
+                (Just x, Just _)   ->
+                    Just . MinDistance $ smartCut x getDistance dend
+                otherwise          -> _birchMinDistance config
         drawLeaf'         = _birchDrawLeaf config
         drawPie'          = _birchDrawPie config
         drawMark'         = _birchDrawMark config
@@ -42,18 +66,16 @@ mainDiagram config = do
         drawMaxNodeSize'  = _birchDrawMaxNodeSize config
         drawNoScaleNodes' = _birchDrawNoScaleNodes config
         drawColors'       = _birchDrawColors config
-        dend              = _birchDend config
+        order'            = fromMaybe (Order 1) $ _birchOrder config
         mat               = return $ _birchMat config
 
         -- Prune dendrogram.
-        dend' = (\ y
-                -> maybe
-                    y
-                    (flip sizeCutDendrogram y . unMinClusterSize)
-                    minSize'
-                )
-                . maybe dend (flip stepCutDendrogram dend . unMaxStep)
-                $ maxStep'
+        dend' = foldl' (\acc f -> f acc) dend
+              $ [ (\x -> maybe x (flip proportionCutDendrogram x . unMaxProportion) maxProportion')
+                , (\x -> maybe x (flip distanceCutDendrogram x . unMinDistance) minDistance')
+                , (\x -> maybe x (flip sizeCutDendrogram x . unMinClusterSize) minSize')
+                , (\x -> maybe x (flip stepCutDendrogram x . unMaxStep) maxStep')
+                ]
         -- Load graph.
         gr    = dendrogramToGraph dend'
 
@@ -89,6 +111,13 @@ mainDiagram config = do
                 fmap (fmap getItemColorMapSumContinuous) mat
             _                           -> return defaultGetItemColorMap
 
+    -- | Get the node color map.
+    let nodeColorMap =
+            case drawLeaf' of
+                (DrawItem DrawDiversity) ->
+                    fmap (getNodeColorMapFromDiversity order' gr) itemColorMap
+                _ -> fmap (getNodeColorMapFromItems gr) $ itemColorMap
+
     -- | Get the legend of the diagram.
     legend <- case drawLeaf' of
                 (DrawItem (DrawContinuous x)) ->
@@ -100,6 +129,6 @@ mainDiagram config = do
                 _ -> return $ fmap plotLabelLegend labelColorMap
 
     -- | Get the entire diagram.
-    plot <- plotGraph legend drawConfig itemColorMap markColorMap gr
+    plot <- plotGraph legend drawConfig itemColorMap nodeColorMap markColorMap gr
 
     return (plot, labelColorMap, itemColorMap, markColorMap, dend', gr)

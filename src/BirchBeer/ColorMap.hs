@@ -18,15 +18,22 @@ module BirchBeer.ColorMap
     , getItemColorMapContinuous
     , getItemColorMapSumContinuous
     , getMarkColorMap
+    , getNodeColorMapFromItems
+    , getNodeColorMapFromDiversity
+    , getGraphColor
+    , getNodeColor
     ) where
 
 -- Remote
+import Control.Monad (join)
+import Data.Colour (AffineSpace (..), withOpacity)
+import Data.Colour.Names (black)
 import Data.Function (on)
 import Data.Int (Int32)
 import Data.Maybe (fromMaybe, isNothing)
+import Data.Tuple (swap)
 import Diagrams.Prelude
--- import Language.R as R
--- import Language.R.QQ (r)
+import Math.Diversity.Diversity (diversity)
 import qualified Control.Foldl as Fold
 import qualified Control.Lens as L
 import qualified Data.Clustering.Hierarchical as HC
@@ -34,6 +41,7 @@ import qualified Data.Colour.CIE as Colour
 import qualified Data.Colour.CIE.Illuminant as Colour
 import qualified Data.Colour.Palette.BrewerSet as Brewer
 import qualified Data.Colour.SRGB as Colour
+import qualified Data.Foldable as F
 import qualified Data.Graph.Inductive as G
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
@@ -154,7 +162,7 @@ getContinuousColor =
   where
     getExist = fromMaybe (error "Feature does not exist or no cells found.")
 
--- | Get the colors of each item, where the color is determined by expression.
+-- | Get the colors of each item, where the color is determined by features.
 getItemColorMapContinuous :: (MatrixLike a) => Feature -> a -> ItemColorMap
 getItemColorMapContinuous g mat
     | isNothing col = ItemColorMap Map.empty
@@ -174,8 +182,8 @@ getItemColorMapContinuous g mat
         $ mat
 
 -- | Get the labels of each item, where the label is determined by a binary high
--- / low expression determined by a threshold. Multiple expressions can be used
--- for combinatorical labeling..
+-- / low features determined by a threshold. Multiple features can be used
+-- for combinatorical labeling.
 getLabelMapThresholdContinuous
     :: (MatrixLike a)
     => [(Feature, Double)] -> a -> LabelMap
@@ -229,3 +237,68 @@ getMarkColorMap g =
     maxVal   = maximum . fmap snd $ valAssoc
     valAssoc = fmap nodeValue . G.labEdges . unClusterGraph $ g
     nodeValue (n1, n2, v) = (n1, v)
+
+-- | Get the node color map based on the labels of each item.
+getNodeColorMapFromItems
+    :: (TreeItem a)
+    => ClusterGraph a -> ItemColorMap -> NodeColorMap
+getNodeColorMapFromItems gr cm =
+    NodeColorMap
+        . Map.fromList
+        . fmap (\ !n -> (n, getGraphColor (Just cm) . getGraphLeafItems gr $ n))
+        . G.nodes
+        . unClusterGraph
+        $ gr
+        
+-- | Get the diversity of each node as the color, treating the leaves separately
+-- from the non-leaves.
+getNodeColorMapFromDiversity
+    :: (TreeItem a, Ord a)
+    => Order -> ClusterGraph a -> ItemColorMap -> NodeColorMap
+getNodeColorMapFromDiversity (Order order) gr cm =
+    NodeColorMap
+        . Map.fromList
+        . mappend (zip innerNodes innerColors)
+        . zip leafNodes
+        $ leafColors
+  where
+    nodes        = G.nodes . unClusterGraph $ gr
+    leafNodes    = fmap fst . F.toList $ getGraphLeaves (unClusterGraph gr) 0
+    innerNodes   =
+        filter (not . flip Set.member leafNodesSet) nodes
+    leafNodesSet = Set.fromList leafNodes
+    leafColors   = colors leafNodes
+    innerColors  = colors innerNodes
+    colors xs    = getContinuousColor
+                 $ fmap (diversity order . F.toList . getGraphLeafItems gr) xs
+
+-- | Get the color of a node, defaulting to black.
+getNodeColor :: Maybe NodeColorMap -> G.Node -> Colour Double
+getNodeColor cm n =
+    fromMaybe black . join . fmap (Map.lookup n . unNodeColorMap) $ cm
+
+-- | Get the a color from a fractional list of colors.
+blendColors :: [(Double, Colour Double)] -> Colour Double
+blendColors []     = black
+blendColors (x:xs) = affineCombo xs . snd $ x
+
+-- | Get the the blended color from a graph node.
+getBlendedColor :: (TreeItem a) => Maybe ItemColorMap -> [a] -> Colour Double
+getBlendedColor cm = blendColors . getEachFractionColorList cm
+
+-- | Get the color of a path or node in a graph.
+getGraphColor
+    :: (TreeItem a)
+    => Maybe ItemColorMap -> Seq.Seq a -> Colour Double
+getGraphColor cm = getBlendedColor cm . F.toList
+
+-- | Get the fraction of each element in a list.
+getEachFractionColorList :: (TreeItem a)
+                         => Maybe ItemColorMap
+                         -> [a]
+                         -> [(Double, Colour Double)]
+getEachFractionColorList Nothing                  = const [(1, black)]
+getEachFractionColorList (Just (ItemColorMap cm)) =
+    fmap swap
+        . getFractions
+        . fmap (flip (Map.findWithDefault black) cm . getId)

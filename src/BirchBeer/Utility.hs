@@ -11,18 +11,21 @@ module BirchBeer.Utility
     ( getMostFrequent
     , getFractions
     , isTo
-    , stepCutDendrogram
-    , sizeCutDendrogram
-    , proportionCutDendrogram
-    , distanceCutDendrogram
+    , branchToLeaf
+    , lengthElements
+    , absLog2
     , dendrogramToGraph
     , getGraphLeaves
     , getGraphLeavesWithParents
+    , getGraphLeafItems
     , degreeToRadian
     , minMaxNorm
+    , mad
+    , median
     ) where
 
 -- Remote
+import Control.Monad (join)
 import Control.Monad.State (MonadState (..), State (..), evalState, execState, modify)
 import Data.Function (on)
 import Data.Int (Int32)
@@ -37,6 +40,7 @@ import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as T
 import qualified Data.Vector as V
+import qualified Statistics.Quantile as S
 
 -- Local
 import BirchBeer.Types
@@ -67,94 +71,15 @@ branchToLeaf (HC.Leaf x) = HC.Leaf x
 branchToLeaf (HC.Branch d l r)  =
     HC.Leaf . mconcat $ HC.elements l <> HC.elements r
 
--- | Cut a dendrogram based off of the number of steps from the root, combining
--- the results.
-stepCutDendrogram :: (Monoid a) => Int -> HC.Dendrogram a -> HC.Dendrogram a
-stepCutDendrogram _ b@(HC.Leaf x)       = branchToLeaf b
-stepCutDendrogram 0 b@(HC.Branch d l r) = branchToLeaf b
-stepCutDendrogram !n (HC.Branch d l r) =
-    HC.Branch d (stepCutDendrogram (n - 1) l) (stepCutDendrogram (n - 1) r)
-
--- | Cut a dendrogram based off of the minimum size of a leaf.
-sizeCutDendrogram
-    :: (Monoid (t a), Traversable t)
-    => Int -> HC.Dendrogram (t a) -> HC.Dendrogram (t a)
-sizeCutDendrogram _ b@(HC.Leaf x) = branchToLeaf b
-sizeCutDendrogram n b@(HC.Branch d l@(HC.Leaf ls) r@(HC.Leaf rs)) =
-    if length ls < n || length rs < n
-        then branchToLeaf b
-        else HC.Branch d (sizeCutDendrogram n l) (sizeCutDendrogram n r)
-sizeCutDendrogram n b@(HC.Branch d l@(HC.Leaf ls) r) =
-    if length ls < n
-        then branchToLeaf b
-        else HC.Branch d l (sizeCutDendrogram n r)
-sizeCutDendrogram n b@(HC.Branch d l r@(HC.Leaf rs)) =
-    if length rs < n
-        then branchToLeaf b
-        else HC.Branch d (sizeCutDendrogram n l) (HC.Leaf rs)
-sizeCutDendrogram n b@(HC.Branch d l r) =
-    if lengthElements l + lengthElements r < n
-        then branchToLeaf b
-        else HC.Branch d (sizeCutDendrogram n l) (sizeCutDendrogram n r)
-
 -- | Log 2 absolute transformation.
 absLog2 :: Double -> Double
 absLog2 = abs . logBase 2
-        
+
 -- | Get the generic length of the elements of the dendrogram.
 lengthElements
     :: (Monoid (t a), Traversable t, Num b)
     => HC.Dendrogram (t a) -> b
 lengthElements = fromIntegral . sum . fmap length . HC.elements
-    
--- | Cut a dendrogram based off of the proportion size of a leaf. Will absolute
--- log2 transform before comparing, so if the cutoff size is 0.5 or 2 (twice as
--- big or half as big), the result is the same. Stops when the node proportion
--- is larger than the input, although leaving the children as well.
-proportionCutDendrogram
-    :: (Monoid (t a), Traversable t)
-    => Double -> HC.Dendrogram (t a) -> HC.Dendrogram (t a)
-proportionCutDendrogram _ (HC.Leaf x) = HC.Leaf x
-proportionCutDendrogram _ b@(HC.Branch _ (HC.Leaf _) (HC.Leaf _)) = b
-proportionCutDendrogram n b@(HC.Branch d l@(HC.Leaf ls) r) =
-    if (absLog2 $ (lengthElements l) / (lengthElements r))
-       > absLog2 n
-        then HC.Branch d l (branchToLeaf r)
-        else HC.Branch d l (proportionCutDendrogram n r)
-proportionCutDendrogram n b@(HC.Branch d l r@(HC.Leaf rs)) =
-    if (absLog2 $ (lengthElements l) / (lengthElements r))
-       > absLog2 n
-        then HC.Branch d (branchToLeaf l) r
-        else HC.Branch d (proportionCutDendrogram n l) r
-proportionCutDendrogram n b@(HC.Branch d l r) =
-    if (absLog2 $ (lengthElements l) / (lengthElements r)) > absLog2 n
-        then HC.Branch d (branchToLeaf l) (branchToLeaf r)
-        else HC.Branch
-                d
-                (proportionCutDendrogram n l)
-                (proportionCutDendrogram n r)
-
--- | Cut a dendrogram based off of the distance, keeping up to and including the
--- children of the stopping vertex. Stop is distance is less than the input
--- distance.
-distanceCutDendrogram
-    :: (Monoid (t a), Traversable t)
-    => Double -> HC.Dendrogram (t a) -> HC.Dendrogram (t a)
-distanceCutDendrogram _ b@(HC.Leaf _) = branchToLeaf b
-distanceCutDendrogram _ b@(HC.Branch _ (HC.Leaf _) (HC.Leaf _)) = b
-distanceCutDendrogram d (HC.Branch d' l@(HC.Leaf _) r) =
-    if d' < d
-        then HC.Branch d' l $ branchToLeaf r
-        else HC.Branch d' l (distanceCutDendrogram d r)
-distanceCutDendrogram d (HC.Branch d' l r@(HC.Leaf rs)) =
-    if d' < d
-        then HC.Branch d' (branchToLeaf l) r
-        else HC.Branch d' (distanceCutDendrogram d l) r
-distanceCutDendrogram d (HC.Branch d' l r) =
-    if d' < d
-        then HC.Branch d' (branchToLeaf l) (branchToLeaf r)
-        else
-            HC.Branch d' (distanceCutDendrogram d l) (distanceCutDendrogram d r)
 
 -- | Convert a dendrogram with height as Q values to a graph for
 -- plotting with leaves containing all information. This also means that the
@@ -228,3 +153,33 @@ degreeToRadian x = x / pi * 180
 -- | Min max normalization.
 minMaxNorm :: Double -> Double -> Double -> Double
 minMaxNorm mi ma v = (v - mi) / (ma - mi)
+
+-- | From statistics github. O(/n/·log /n/). Estimate the median absolute
+--   deviation (MAD) of a
+--   sample /x/ using 'continuousBy'. It's robust estimate of
+--   variability in sample and defined as:
+--
+--   \[
+--   MAD = \operatorname{median}(| X_i - \operatorname{median}(X) |)
+--   \]
+mad :: S.ContParam  -- ^ Parameters /α/ and /β/.
+    -> V.Vector Double   -- ^ /x/, the sample data.
+    -> Double
+mad p xs = median p $ V.map (abs . subtract med) xs
+  where
+    med = median p xs
+
+-- | statistics github. O(/n/·log /n/) Estimate median of sample
+median :: S.ContParam  -- ^ Parameters /α/ and /β/.
+       -> V.Vector Double   -- ^ /x/, the sample data.
+       -> Double
+median p = S.continuousBy p 1 2
+
+-- | Get the collection of items in a leaf.
+getGraphLeafItems :: ClusterGraph a -> G.Node -> Seq.Seq a
+getGraphLeafItems (ClusterGraph gr) =
+    join
+        . fmap ( fromMaybe (error "No items in leaf.")
+            . snd
+            )
+        . getGraphLeaves gr

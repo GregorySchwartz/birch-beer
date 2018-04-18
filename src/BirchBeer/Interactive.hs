@@ -42,14 +42,16 @@ interactiveDiagram
 interactiveDiagram dend labelMap mat = graphicalUI' "birch-beer" $ do
     minSize'  <-
         fmap (MinClusterSize . round) $ TS.spinButtonAt 1 "Minimum cluster size" 1
-    maxStep' <- fmap (MaxStep . round)
+    maxStep'  <- fmap (MaxStep . round)
                $ TS.spinButtonAt 1000 "Maximum number of steps from root" 1
+    order'    <- fmap Order $ TS.spinButtonAt 1 "Order of diversity" 1
     drawLeafTemp <- TS.radioButton
                         "Leaf type"
                         DrawText
                         [ DrawItem DrawLabel
                         , DrawItem DrawSumContinuous
                         , DrawItem (DrawContinuous "GENE")
+                        , DrawItem DrawDiversity
                         ]
     drawContinuousGene' <- TS.entry "GENE for DrawItem DrawContinuous"
     drawPie' <- TS.radioButton "Leaf shape" PieRing [PieChart, PieNone]
@@ -78,18 +80,22 @@ interactiveDiagram dend labelMap mat = graphicalUI' "birch-beer" $ do
                             DrawItem (DrawContinuous _) ->
                                 DrawItem (DrawContinuous drawContinuousGene')
                             x -> x
-            config = Config { _birchLabelMap = labelMap
-                            , _birchMinStep = Just minSize'
-                            , _birchMaxStep = Just maxStep'
-                            , _birchDrawLeaf = drawLeaf'
-                            , _birchDrawPie = drawPie'
-                            , _birchDrawMark = drawMark'
-                            , _birchDrawNodeNumber = drawNodeNumber'
-                            , _birchDrawMaxNodeSize = drawMaxNodeSize'
+            config = Config { _birchLabelMap         = labelMap
+                            , _birchMinSize          = Just minSize'
+                            , _birchMaxStep          = Just maxStep'
+                            , _birchMaxProportion    = Nothing
+                            , _birchMinDistance      = Nothing
+                            , _birchSmartCutoff      = Nothing
+                            , _birchOrder            = Nothing
+                            , _birchDrawLeaf         = drawLeaf'
+                            , _birchDrawPie          = drawPie'
+                            , _birchDrawMark         = drawMark'
+                            , _birchDrawNodeNumber   = drawNodeNumber'
+                            , _birchDrawMaxNodeSize  = drawMaxNodeSize'
                             , _birchDrawNoScaleNodes = drawNoScaleNodes'
-                            , _birchDrawColors = drawColors'
-                            , _birchDend = dend
-                            , _birchMat = mat
+                            , _birchDrawColors       = drawColors'
+                            , _birchDend             = dend
+                            , _birchMat              = mat
                             }
         in fmap (L.view L._1) $ mainDiagram config
 

@@ -21,6 +21,7 @@ library
                      , BirchBeer.Load
                      , BirchBeer.MainDiagram
                      , BirchBeer.Plot
+                     , BirchBeer.Stopping
                      , BirchBeer.Utility
   build-depends:       base >= 4.7 && < 5
                      , SVGFonts
@@ -35,6 +36,7 @@ library
                      , diagrams-graphviz
                      , diagrams-gtk
                      , diagrams-lib
+                     , diversity
                      , fgl
                      , foldl
                      , graphviz
@@ -49,6 +51,7 @@ library
                      , safe
                      , sparse-linear-algebra
                      , split
+                     , statistics
                      , temporary
                      , text
                      , text-show

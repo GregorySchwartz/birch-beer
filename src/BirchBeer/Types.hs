@@ -60,6 +60,18 @@ newtype MinClusterSize = MinClusterSize
 newtype MaxStep = MaxStep
     { unMaxStep :: Int
     } deriving (Read,Show)
+newtype MaxProportion = MaxProportion
+    { unMaxProportion :: Double
+    } deriving (Read,Show)
+newtype MinDistance = MinDistance
+    { unMinDistance :: Double
+    } deriving (Read,Show)
+newtype SmartCutoff = SmartCutoff
+    { unSmartCutoff :: Double
+    } deriving (Read,Show)
+newtype Order = Order
+    { unOrder :: Double
+    } deriving (Read,Show)
 newtype DrawMaxNodeSize = DrawMaxNodeSize
     { unDrawMaxNodeSize :: Double
     } deriving (Read,Show)
@@ -82,6 +94,9 @@ newtype ItemColorMap = ItemColorMap
 newtype MarkColorMap = MarkColorMap
     { unMarkColorMap :: Map G.Node (AlphaColour Double)
     } deriving (Read,Show)
+newtype NodeColorMap = NodeColorMap
+    { unNodeColorMap :: Map G.Node Kolor
+    } deriving (Read,Show)
 newtype ClusterGraph a = ClusterGraph
     { unClusterGraph :: G.Gr (G.Node, Maybe (Seq.Seq a)) Double
     } deriving (Read, Show)
@@ -100,6 +115,7 @@ data DrawItemType
     | DrawContinuous T.Text
     | DrawThresholdContinuous [(T.Text, Double)]
     | DrawSumContinuous
+    | DrawDiversity
     deriving (Read,Show)
 data DrawLeaf = DrawItem DrawItemType | DrawText deriving (Read, Show)
 data DrawPie  = PieRing | PieChart | PieNone deriving (Read, Show)
@@ -117,8 +133,12 @@ data DrawConfig = DrawConfig
 
 data Config a b = Config
     { _birchLabelMap         :: Maybe LabelMap
-    , _birchMinStep          :: Maybe MinClusterSize
+    , _birchSmartCutoff      :: Maybe SmartCutoff
+    , _birchMinSize          :: Maybe MinClusterSize
     , _birchMaxStep          :: Maybe MaxStep
+    , _birchMaxProportion    :: Maybe MaxProportion
+    , _birchMinDistance      :: Maybe MinDistance
+    , _birchOrder            :: Maybe Order
     , _birchDrawLeaf         :: DrawLeaf
     , _birchDrawPie          :: DrawPie
     , _birchDrawMark         :: DrawNodeMark
