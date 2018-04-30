@@ -15,20 +15,21 @@ import Data.List (foldl')
 import Data.Maybe (fromMaybe, isJust)
 import qualified Control.Lens as L
 import qualified Data.Clustering.Hierarchical as HC
+import qualified Data.Text as T
 import qualified Data.Vector as V
 import qualified Diagrams.Backend.Cairo as D
 import qualified Diagrams.Prelude as D
 
 -- Local
 import BirchBeer.ColorMap
+import BirchBeer.LeafGraph
 import BirchBeer.Load
 import BirchBeer.Plot
 import BirchBeer.Stopping
 import BirchBeer.Types
 import BirchBeer.Utility
 
--- | Main function for generating the diagram and all needed arguments. For R,
--- requires withEmbeddedR to start an instance before calling this function.
+-- | Main function for generating the diagram and all needed arguments.
 mainDiagram
     :: (Eq a, Ord a, TreeItem a, MatrixLike b)
     => Config a b
@@ -60,7 +61,7 @@ mainDiagram config = do
                     Just . MinDistance $ smartCut x getDistance dend
                 otherwise          -> _birchMinDistance config
         drawLeaf'         = _birchDrawLeaf config
-        drawPie'          = _birchDrawPie config
+        drawCollection'   = _birchDrawCollection config
         drawMark'         = _birchDrawMark config
         drawNodeNumber'   = _birchDrawNodeNumber config
         drawMaxNodeSize'  = _birchDrawMaxNodeSize config
@@ -68,6 +69,7 @@ mainDiagram config = do
         drawColors'       = _birchDrawColors config
         order'            = fromMaybe (Order 1) $ _birchOrder config
         mat               = return $ _birchMat config
+        simMat            = _birchSimMat config
 
         -- Prune dendrogram.
         dend' = foldl' (\acc f -> f acc) dend
@@ -82,7 +84,7 @@ mainDiagram config = do
         -- Load draw configurations.
         drawConfig        = DrawConfig
                                 drawLeaf'
-                                drawPie'
+                                drawCollection'
                                 drawNodeNumber'
                                 drawMaxNodeSize'
                                 drawNoScaleNodes'
@@ -117,6 +119,8 @@ mainDiagram config = do
                 (DrawItem DrawDiversity) ->
                     fmap (getNodeColorMapFromDiversity order' gr) itemColorMap
                 _ -> fmap (getNodeColorMapFromItems gr) $ itemColorMap
+    -- | Get the graph at each leaf (if applicable).
+        leafGraphMap = fmap (clusterGraphToLeafGraphMap gr) simMat
 
     -- | Get the legend of the diagram.
     legend <- case drawLeaf' of
@@ -129,6 +133,13 @@ mainDiagram config = do
                 _ -> return $ fmap plotLabelLegend labelColorMap
 
     -- | Get the entire diagram.
-    plot <- plotGraph legend drawConfig itemColorMap nodeColorMap markColorMap gr
+    plot <- plotGraph
+                legend
+                drawConfig
+                itemColorMap
+                nodeColorMap
+                markColorMap
+                leafGraphMap
+                gr
 
     return (plot, labelColorMap, itemColorMap, markColorMap, dend', gr)

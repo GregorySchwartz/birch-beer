@@ -249,7 +249,7 @@ getNodeColorMapFromItems gr cm =
         . G.nodes
         . unClusterGraph
         $ gr
-        
+
 -- | Get the diversity of each node as the color, treating the leaves separately
 -- from the non-leaves.
 getNodeColorMapFromDiversity

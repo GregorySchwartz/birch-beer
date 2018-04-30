@@ -18,6 +18,7 @@ library
   exposed-modules:     BirchBeer.Types
                      , BirchBeer.ColorMap
                      , BirchBeer.Interactive
+                     , BirchBeer.LeafGraph
                      , BirchBeer.Load
                      , BirchBeer.MainDiagram
                      , BirchBeer.Plot
@@ -45,11 +46,14 @@ library
                      , hierarchical-clustering-diagrams
                      , hierarchical-spectral-clustering
                      , lens
+                     , matrix-market-attoparsec
                      , mtl
                      , palette
                      , plots
                      , safe
+                     , scientific
                      , sparse-linear-algebra
+                     , spectral-clustering
                      , split
                      , statistics
                      , temporary

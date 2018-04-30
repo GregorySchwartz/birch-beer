@@ -38,8 +38,12 @@ import BirchBeer.Types
 -- | Interactive version of the tree.
 interactiveDiagram
     :: (Eq a, Ord a, TreeItem a, MatrixLike b)
-    => HC.Dendrogram (V.Vector a) -> Maybe LabelMap -> Maybe b -> IO ()
-interactiveDiagram dend labelMap mat = graphicalUI' "birch-beer" $ do
+    => HC.Dendrogram (V.Vector a)
+    -> Maybe LabelMap
+    -> Maybe b
+    -> Maybe (SimMatrix b)
+    -> IO ()
+interactiveDiagram dend labelMap mat simMat = graphicalUI' "birch-beer" $ do
     minSize'  <-
         fmap (MinClusterSize . round) $ TS.spinButtonAt 1 "Minimum cluster size" 1
     maxStep'  <- fmap (MaxStep . round)
@@ -54,7 +58,8 @@ interactiveDiagram dend labelMap mat = graphicalUI' "birch-beer" $ do
                         , DrawItem DrawDiversity
                         ]
     drawContinuousGene' <- TS.entry "GENE for DrawItem DrawContinuous"
-    drawPie' <- TS.radioButton "Leaf shape" PieRing [PieChart, PieNone]
+    drawCollection' <-
+        TS.radioButton "Leaf shape" PieRing [PieChart, PieNone, CollectionGraph]
     drawMark' <- TS.radioButton "Node mark" MarkNone [MarkModularity]
     drawNodeNumber' <- fmap DrawNodeNumber $ TS.checkBox "Show node number"
     drawMaxNodeSize' <-
@@ -88,7 +93,7 @@ interactiveDiagram dend labelMap mat = graphicalUI' "birch-beer" $ do
                             , _birchSmartCutoff      = Nothing
                             , _birchOrder            = Nothing
                             , _birchDrawLeaf         = drawLeaf'
-                            , _birchDrawPie          = drawPie'
+                            , _birchDrawCollection   = drawCollection'
                             , _birchDrawMark         = drawMark'
                             , _birchDrawNodeNumber   = drawNodeNumber'
                             , _birchDrawMaxNodeSize  = drawMaxNodeSize'
@@ -96,6 +101,7 @@ interactiveDiagram dend labelMap mat = graphicalUI' "birch-beer" $ do
                             , _birchDrawColors       = drawColors'
                             , _birchDend             = dend
                             , _birchMat              = mat
+                            , _birchSimMat           = simMat
                             }
         in fmap (L.view L._1) $ mainDiagram config
 

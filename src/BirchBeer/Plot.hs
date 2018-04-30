@@ -202,12 +202,20 @@ drawGraphItem (Just (ItemColorMap cm)) node =
            . F.toList
            $ node
 
--- | Plot a pie chart of items.
-drawPieItem
+-- | Plot a collection of items.
+drawCollectionItem
     :: (TreeItem a)
-    => DrawPie -> Maybe ItemColorMap -> Seq.Seq a -> Diagram B
-drawPieItem _ Nothing _ = mempty
-drawPieItem drawPie (Just (ItemColorMap cm)) node =
+    => DrawCollection
+    -> Maybe ItemColorMap
+    -> Maybe LeafGraphDiaMap
+    -> G.Node
+    -> Seq.Seq a
+    -> Diagram B
+drawCollectionItem CollectionGraph _ Nothing _ _ = mempty
+drawCollectionItem CollectionGraph _ (Just (LeafGraphDiaMap lgdm)) n _ =
+    fromMaybe mempty . Map.lookup n $ lgdm
+drawCollectionItem _ Nothing _ _ _ = mempty
+drawCollectionItem drawCollection (Just (ItemColorMap cm)) _ _ items =
     renderAxis $ polarAxis &~ do
         let colorWedge :: (Kolor, Double) -> State (Plot (Wedge Double) b) ()
             colorWedge colorPair = do
@@ -217,10 +225,10 @@ drawPieItem drawPie (Just (ItemColorMap cm)) node =
                        . getFractions
                        . fmap (flip (Map.findWithDefault black) cm . getId)
                        . F.toList
-                       $ node
+                       $ items
 
         piePlot colorPairs snd $ onWedges colorWedge
-        case drawPie of
+        case drawCollection of
             PieChart -> return ()
             _        -> wedgeInnerRadius .= 0.9
         hide (axes . traversed)
@@ -372,7 +380,7 @@ drawGraphPath opts ncm gr (n1, _) p1 (n2, _) p2 _ _ =
     c1           = getNodeColor ncm n1
     c2           = getNodeColor ncm n2
     trail        = getEdgeTrail p1 p2 (height draw1) (height draw2)
-    drawNode n p = drawGraphNode opts Nothing ncm Nothing gr (n, Nothing) p -- DrawText is irrelevant here.
+    drawNode n p = drawGraphNode opts Nothing ncm Nothing Nothing gr (n, Nothing) p -- DrawText is irrelevant here.
 
 -- | Draw the final node of a graph.
 drawGraphNode :: (TreeItem a)
@@ -380,11 +388,12 @@ drawGraphNode :: (TreeItem a)
               -> Maybe ItemColorMap
               -> Maybe NodeColorMap
               -> Maybe MarkColorMap
+              -> Maybe LeafGraphDiaMap
               -> ClusterGraph a
               -> (G.Node, Maybe (Seq.Seq a))
               -> P2 Double
               -> Diagram B
-drawGraphNode opts@(DrawConfig { _drawLeaf = DrawText }) cm _ _ _ (n, Just items) pos =
+drawGraphNode opts@(DrawConfig { _drawLeaf = DrawText }) cm _ _ _ _ (n, Just items) pos =
     (textDia dnn <> drawGraphLabel cm items)
         # scaleUToY ((/ 2) . unDrawMaxNodeSize . _drawMaxNodeSize $ opts)
         # moveTo pos
@@ -392,26 +401,28 @@ drawGraphNode opts@(DrawConfig { _drawLeaf = DrawText }) cm _ _ _ (n, Just items
     textDia True  = text (show n) # fc black
     textDia False = mempty
     dnn = unDrawNodeNumber . _drawNodeNumber $ opts
-drawGraphNode opts@(DrawConfig { _drawLeaf = (DrawItem drawType) }) cm ncm _ gr (n, Just items) pos =
+drawGraphNode opts@(DrawConfig { _drawLeaf = (DrawItem drawType) }) cm ncm _ lgdm gr (n, Just items) pos =
     drawLeafDia drawType # moveTo pos
   where
     drawLeafDia DrawDiversity =
         ((circle 1 # fc (getNodeColor ncm n) # lw none # scaleUToY scaleVal)
             <> background PieChart)
-    drawLeafDia _ = ( pieDia (_drawPie opts)
+    drawLeafDia _ = ( collectionDia (_drawCollection opts)
                    <> itemsDia
-                   <> background (_drawPie opts)
+                   <> background (_drawCollection opts)
                     )
     background PieNone = roundedRect (width itemsDia) (height itemsDia) 1 # fc white # lw none # scaleUToY (scaleVal * 1.1)
     background _       = circle 1 # fc white # lw none # scaleUToY scaleVal
-    itemsDia              = getItemsDia $ _drawPie opts
+    itemsDia              = getItemsDia $ _drawCollection opts
+    getItemsDia CollectionGraph = mempty
     getItemsDia PieNone   = scaleUToY scaleVal
                           $ textDia dnn <> drawGraphItem cm items
     getItemsDia PieChart  = mempty
     getItemsDia _         = scaleUToY (0.50 * scaleVal)
                           $ textDia dnn <> drawGraphItem cm items
-    pieDia PieNone     = mempty
-    pieDia x           = scaleUToY scaleVal $ drawPieItem x cm items
+    collectionDia PieNone = mempty
+    collectionDia x       =
+        scaleUToY scaleVal $ drawCollectionItem x cm lgdm n items
     scaleVal = if unDrawNoScaleNodesFlag . _drawNoScaleNodesFlag $ opts
                 then maxNodeSize
                 else getScaledLeafSize maxClusterSize' maxNodeSize  items
@@ -420,7 +431,7 @@ drawGraphNode opts@(DrawConfig { _drawLeaf = (DrawItem drawType) }) cm ncm _ gr 
     textDia True  = text (show n) # fc black
     textDia False = mempty
     dnn = unDrawNodeNumber . _drawNodeNumber $ opts
-drawGraphNode opts cm ncm mcm gr (n, Nothing) pos =
+drawGraphNode opts cm ncm mcm _ gr (n, Nothing) pos =
     (mark mcm <> mainNode) # moveTo pos
   where
     mainNode = (textDia dnn <> (circle 1 # fc color # rootDiffer n))
@@ -449,6 +460,30 @@ drawGraphNode opts cm ncm mcm gr (n, Nothing) pos =
         const (unDrawMaxNodeSize . _drawMaxNodeSize $ opts)
     totalItems = fromIntegral . Seq.length . getGraphLeafItems gr $ 0
 
+-- | Plot the graph of a leaf.
+plotLeafGraph
+    :: (Ord a, TreeItem a)
+    => Maybe ItemColorMap -> LeafGraph a -> IO (Diagram B)
+plotLeafGraph cm (LeafGraph gr) = do
+    layout <- G.layoutGraph G.TwoPi gr
+
+    let drawNode (_, x) pos =
+            moveTo pos
+                . getItem
+                . maybe black ( Map.findWithDefault black (getId x)
+                              . unItemColorMap
+                              )
+                $ cm
+        drawEdge _ p1 _ p2 w _ =
+            fromVertices [p1, p2] # strokeLine # lc (blend w black white)
+        treeDia =
+            G.drawGraph'
+                drawNode
+                drawEdge
+                layout
+
+    return treeDia
+
 -- | Plot a graph rather than a traditional tree. Uses only info in leaves
 -- rather than a tree which stores all leaves.
 plotGraph
@@ -458,9 +493,10 @@ plotGraph
     -> Maybe ItemColorMap
     -> Maybe NodeColorMap
     -> Maybe MarkColorMap
+    -> Maybe (LeafGraphMap T.Text)
     -> ClusterGraph a
     -> IO (Diagram B)
-plotGraph legend opts cm ncm mcm (ClusterGraph gr) = do
+plotGraph legend opts cm ncm mcm lgm (ClusterGraph gr) = do
     let numClusters :: Double
         numClusters = fromIntegral . Seq.length $ getGraphLeaves gr 0
         params :: (TreeItem a) => G.GraphvizParams Int (G.Node, Maybe (Seq.Seq a)) HC.Distance () (G.Node, Maybe (Seq.Seq a))
@@ -471,9 +507,18 @@ plotGraph legend opts cm ncm mcm (ClusterGraph gr) = do
 
     layout <- G.layoutGraph' params G.TwoPi gr
 
+    -- Get the graphs at each leaf (if applicable).
+    lgdm <- sequence
+          . fmap ( fmap LeafGraphDiaMap
+                 . sequence
+                 . Map.map (plotLeafGraph cm)
+                 . unLeafGraphMap
+                 )
+          $ lgm
+
     let treeDia =
             G.drawGraph'
-                (drawGraphNode opts cm ncm mcm (ClusterGraph gr))
+                (drawGraphNode opts cm ncm mcm lgdm (ClusterGraph gr))
                 (drawGraphPath opts ncm (ClusterGraph gr))
                 layout
         dia = case legend of

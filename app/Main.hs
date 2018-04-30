@@ -25,9 +25,10 @@ import qualified Diagrams.Backend.Cairo as D
 import qualified Diagrams.Prelude as D
 
 -- Local
-import BirchBeer.Load
 import BirchBeer.ColorMap
 import BirchBeer.Interactive
+import BirchBeer.LeafGraph
+import BirchBeer.Load
 import BirchBeer.MainDiagram
 import BirchBeer.Types
 import BirchBeer.Utility
@@ -35,6 +36,7 @@ import BirchBeer.Utility
 -- | Command line arguments
 data Options = Options
     { input :: String <?> "(FILE) The input JSON file."
+    , inputMatrix :: Maybe String <?> "([Nothing] | FILE) The input adjacency matrix file for CollectionGraph (matrix market format)."
     , output :: Maybe String <?> "([dendrogram.pdf] | FILE) The output file."
     , delimiter :: Maybe Char <?> "([,] | CHAR) The delimiter for csv files."
     , labelsFile :: Maybe String <?> "([Nothing] | FILE) The input file containing the label for each item, with \"item,label\" header."
@@ -45,7 +47,7 @@ data Options = Options
     , smartCutoff :: Maybe Double <?> "([Nothing] | DOUBLE) Whether to set the cutoffs for --min-size, --max-proportion, and --min-distance based off of the distributions (median + (DOUBLE * MAD)) of all nodes. To use smart cutoffs, use this argument and then set one of the three arguments to an arbitrary number, whichever cutoff type you want to use. --min-size distribution is log2 transformed."
     , order :: Maybe Double <?> "([1] | DOUBLE) The order of diversity for DrawItem DrawDiversity."
     , drawLeaf :: Maybe String <?> "([DrawText] | DrawItem DrawItemType) How to draw leaves in the dendrogram. DrawText is the number of items in that leaf. DrawItem is the collection of items represented by circles, consisting of: DrawItem DrawLabel, where each item is colored by its label, DrawItem (DrawContinuous FEATURE), where each item is colored by the expression of FEATURE (corresponding to a feature name in the input matrix), DrawItem (DrawThresholdContinuous [(FEATURE, DOUBLE)], where each item is colored by the binary high / low expression of FEATURE based on DOUBLE and multiple FEATUREs can be used to combinatorically label items (FEATURE1 high / FEATURE2 low, etc.), DrawItem DrawSumContinuous, where each item is colored by the sum of the post-normalized columns (use --normalization NoneNorm for UMI counts, default), and DrawItem DrawDiversity, where each node is colored by the diversity based on the labels of each item and the color is normalized separately for the leaves and the inner nodes. The default is DrawText, unless --labels-file is provided, in which DrawItem DrawLabel is the default."
-    , drawPie :: Maybe String <?> "([PieRing] | PieChart | PieNone) How to draw item leaves in the dendrogram. PieRing draws a pie chart ring around the items. PieChart only draws a pie chart instead of items. PieNone only draws items, no pie rings or charts."
+    , drawCollection :: Maybe String <?> "([PieRing] | PieChart | PieNone | CollectionGraph) How to draw item leaves in the dendrogram. PieRing draws a pie chart ring around the items. PieChart only draws a pie chart instead of items. PieNone only draws items, no pie rings or charts. CollectionGraph draws the nodes and edges within that leaf based on the input matrix (here an adjacency matrix with all positive values)."
     , drawMark :: Maybe String <?> "([MarkNone] | MarkModularity) How to draw annotations around each inner node in the tree. MarkNone draws nothing and MarkModularity draws a black circle representing the modularity at that node, darker black means higher modularity for that next split."
     , drawNodeNumber :: Bool <?> "Draw the node numbers on top of each node in the graph."
     , drawMaxNodeSize :: Maybe Double <?> "([72] | DOUBLE) The max node size when drawing the graph. 36 is the theoretical default, but here 72 makes for thicker branches."
@@ -57,6 +59,7 @@ data Options = Options
 modifiers :: Modifiers
 modifiers = lispCaseModifiers { shortNameModifier = short }
   where
+    short "inputMatrix"          = Just 'X'
     short "minSize"              = Just 'M'
     short "maxStep"              = Just 'S'
     short "maxProportion"        = Just 'P'
@@ -81,6 +84,7 @@ main = do
                       \ scaling, and more."
 
     let input'            = unHelpful . input $ opts
+        inputMatrix'      = unHelpful . inputMatrix $ opts
         delimiter'        =
             Delimiter . fromMaybe ',' . unHelpful . delimiter $ opts
         labelsFile'       = fmap LabelFile . unHelpful . labelsFile $ opts
@@ -95,7 +99,7 @@ main = do
                 . unHelpful
                 . drawLeaf
                 $ opts
-        drawPie'          = maybe PieRing read . unHelpful . drawPie $ opts
+        drawCollection'   = maybe PieRing read . unHelpful . drawCollection $ opts
         drawMark'         = maybe MarkNone read . unHelpful . drawMark $ opts
         drawNodeNumber'   = DrawNodeNumber . unHelpful . drawNodeNumber $ opts
         drawMaxNodeSize'  =
@@ -127,6 +131,7 @@ main = do
                         --     mat
                     _ -> sequence . fmap (loadLabelData delimiter') $ labelsFile'
 
+    simMat <- sequence . fmap (fmap SimilarityMatrix . loadMatrix) $ inputMatrix'
 
     let config :: Config T.Text (S.SpMatrix Double)
         config = Config { _birchLabelMap         = labelMap
@@ -137,7 +142,7 @@ main = do
                         , _birchSmartCutoff      = smartCutoff'
                         , _birchOrder            = order'
                         , _birchDrawLeaf         = drawLeaf'
-                        , _birchDrawPie          = drawPie'
+                        , _birchDrawCollection   = drawCollection'
                         , _birchDrawMark         = drawMark'
                         , _birchDrawNodeNumber   = drawNodeNumber'
                         , _birchDrawMaxNodeSize  = drawMaxNodeSize'
@@ -145,6 +150,7 @@ main = do
                         , _birchDrawColors       = drawColors'
                         , _birchDend             = dend
                         , _birchMat              = Nothing
+                        , _birchSimMat           = simMat
                         }
 
     (plot, _, _, _, _, _) <- mainDiagram config
@@ -154,6 +160,6 @@ main = do
             (D.mkHeight 1000)
             plot
 
-    when (unHelpful . interactive $ opts) $ interactiveDiagram dend labelMap (Nothing :: Maybe (S.SpMatrix Double))
+    when (unHelpful . interactive $ opts) $ interactiveDiagram dend labelMap (Nothing :: Maybe (S.SpMatrix Double)) Nothing
 
     return ()

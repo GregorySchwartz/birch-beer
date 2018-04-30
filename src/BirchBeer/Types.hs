@@ -20,6 +20,8 @@ import Data.Colour.Palette.BrewerSet (Kolor)
 import Data.Colour.SRGB (Colour (..), RGB (..))
 import Data.Colour.SRGB.Linear (toRGB)
 import Data.Map.Strict (Map)
+import Diagrams.Backend.Cairo
+import Diagrams.Prelude
 import GHC.Generics (Generic)
 import TextShow (showt)
 import qualified Control.Lens as L
@@ -100,6 +102,14 @@ newtype NodeColorMap = NodeColorMap
 newtype ClusterGraph a = ClusterGraph
     { unClusterGraph :: G.Gr (G.Node, Maybe (Seq.Seq a)) Double
     } deriving (Read, Show)
+newtype LeafGraph a = LeafGraph
+    { unLeafGraph :: G.Gr (G.Node, a) Double
+    }
+newtype LeafGraphMap a = LeafGraphMap
+    { unLeafGraphMap :: Map G.Node (LeafGraph a)
+    }
+newtype LeafGraphDiaMap = LeafGraphDiaMap
+    { unLeafGraphDiaMap :: Map G.Node (Diagram B) }
 newtype CustomColors = CustomColors
     { unCustomColors :: [Kolor]
     } deriving (Read, Show)
@@ -109,6 +119,8 @@ newtype H = H Double
 newtype U = U Double
 newtype V = V Double
 
+data (MatrixLike a) => SimMatrix a = SimilarityMatrix a | B2Matrix a
+
 -- Advanced
 data DrawItemType
     = DrawLabel
@@ -117,15 +129,15 @@ data DrawItemType
     | DrawSumContinuous
     | DrawDiversity
     deriving (Read,Show)
-data DrawLeaf = DrawItem DrawItemType | DrawText deriving (Read, Show)
-data DrawPie  = PieRing | PieChart | PieNone deriving (Read, Show)
-data DrawNodeMark = MarkModularity | MarkNone deriving (Read, Show)
+data DrawLeaf       = DrawItem DrawItemType | DrawText deriving (Read, Show)
+data DrawCollection = CollectionGraph | PieRing | PieChart | PieNone deriving (Read, Show)
+data DrawNodeMark   = MarkModularity | MarkNone deriving (Read, Show)
 
 data Palette = Set1 | Hcl
 
 data DrawConfig = DrawConfig
     { _drawLeaf :: DrawLeaf
-    , _drawPie :: DrawPie
+    , _drawCollection :: DrawCollection
     , _drawNodeNumber :: DrawNodeNumber
     , _drawMaxNodeSize :: DrawMaxNodeSize
     , _drawNoScaleNodesFlag :: DrawNoScaleNodesFlag
@@ -140,7 +152,7 @@ data Config a b = Config
     , _birchMinDistance      :: Maybe MinDistance
     , _birchOrder            :: Maybe Order
     , _birchDrawLeaf         :: DrawLeaf
-    , _birchDrawPie          :: DrawPie
+    , _birchDrawCollection   :: DrawCollection
     , _birchDrawMark         :: DrawNodeMark
     , _birchDrawNodeNumber   :: DrawNodeNumber
     , _birchDrawMaxNodeSize  :: DrawMaxNodeSize
@@ -148,7 +160,8 @@ data Config a b = Config
     , _birchDrawColors       :: Maybe CustomColors
     , _birchDend             :: HC.Dendrogram (V.Vector a)
     , _birchMat              :: Maybe b
-    } deriving (Read, Show)
+    , _birchSimMat           :: Maybe (SimMatrix b)
+    }
 
 class TreeItem a where
     getId :: a -> Id
