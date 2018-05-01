@@ -65,7 +65,7 @@ modifiers = lispCaseModifiers { shortNameModifier = short }
     short "maxProportion"        = Just 'P'
     short "maxDistance"          = Just 'T'
     short "drawLeaf"             = Just 'L'
-    short "drawDendrogram"       = Just 'D'
+    short "drawCollection"       = Just 'D'
     short "drawNodeNumber"       = Just 'N'
     short "drawMark"             = Just 'K'
     short "drawColors"           = Just 'R'
@@ -160,6 +160,6 @@ main = do
             (D.mkHeight 1000)
             plot
 
-    when (unHelpful . interactive $ opts) $ interactiveDiagram dend labelMap (Nothing :: Maybe (S.SpMatrix Double)) Nothing
+    when (unHelpful . interactive $ opts) $ interactiveDiagram dend labelMap (Nothing :: Maybe (S.SpMatrix Double)) simMat
 
     return ()

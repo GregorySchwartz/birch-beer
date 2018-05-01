@@ -176,8 +176,8 @@ class MatrixLike a where
 
 instance MatrixLike (S.SpMatrix Double) where
     getMatrix       = id
-    getRowNames mat = V.fromList . fmap showt $ [0..S.nrows mat - 1]
-    getColNames mat = V.fromList . fmap showt $ [0..S.nrows mat - 1]
+    getRowNames mat = V.fromList . fmap showt $ [1..S.nrows mat]
+    getColNames mat = V.fromList . fmap showt $ [1..S.nrows mat]
 
 deriving instance (Read a) => Read (HC.Dendrogram a)
 deriving instance Generic (HC.Dendrogram a)
