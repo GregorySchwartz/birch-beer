@@ -120,7 +120,12 @@ mainDiagram config = do
                     fmap (getNodeColorMapFromDiversity order' gr) itemColorMap
                 _ -> fmap (getNodeColorMapFromItems gr) $ itemColorMap
     -- | Get the graph at each leaf (if applicable).
-        leafGraphMap = fmap (clusterGraphToLeafGraphMap gr) simMat
+        edgeThreshold (CollectionGraph x) = EdgeThreshold x
+        edgeThreshold _ = EdgeThreshold 0
+        leafGraphMap =
+            fmap
+                (clusterGraphToLeafGraphMap (edgeThreshold drawCollection') gr)
+                simMat
 
     -- | Get the legend of the diagram.
     legend <- case drawLeaf' of

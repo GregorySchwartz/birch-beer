@@ -74,6 +74,9 @@ newtype SmartCutoff = SmartCutoff
 newtype Order = Order
     { unOrder :: Double
     } deriving (Read,Show)
+newtype EdgeThreshold = EdgeThreshold
+    { unEdgeThreshold :: Double
+    } deriving (Read,Show)
 newtype DrawMaxNodeSize = DrawMaxNodeSize
     { unDrawMaxNodeSize :: Double
     } deriving (Read,Show)
@@ -104,10 +107,10 @@ newtype ClusterGraph a = ClusterGraph
     } deriving (Read, Show)
 newtype LeafGraph a = LeafGraph
     { unLeafGraph :: G.Gr (G.Node, a) Double
-    }
+    } deriving (Read, Show)
 newtype LeafGraphMap a = LeafGraphMap
     { unLeafGraphMap :: Map G.Node (LeafGraph a)
-    }
+    } deriving (Read, Show)
 newtype LeafGraphDiaMap = LeafGraphDiaMap
     { unLeafGraphDiaMap :: Map G.Node (Diagram B) }
 newtype CustomColors = CustomColors
@@ -130,7 +133,7 @@ data DrawItemType
     | DrawDiversity
     deriving (Read,Show)
 data DrawLeaf       = DrawItem DrawItemType | DrawText deriving (Read, Show)
-data DrawCollection = CollectionGraph | PieRing | PieChart | PieNone deriving (Read, Show)
+data DrawCollection = CollectionGraph Double | PieRing | PieChart | PieNone deriving (Read, Show)
 data DrawNodeMark   = MarkModularity | MarkNone deriving (Read, Show)
 
 data Palette = Set1 | Hcl

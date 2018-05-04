@@ -31,41 +31,51 @@ import BirchBeer.Utility
 -- | Convert a ClusterGraph to a map of LeafGraphs.
 clusterGraphToLeafGraphMap
     :: (TreeItem a, MatrixLike b)
-    => ClusterGraph a -> SimMatrix b -> LeafGraphMap T.Text
-clusterGraphToLeafGraphMap (ClusterGraph gr) simMat =
+    => EdgeThreshold -> ClusterGraph a -> SimMatrix b -> LeafGraphMap T.Text
+clusterGraphToLeafGraphMap edgeThresh (ClusterGraph gr) simMat =
     LeafGraphMap
-        . Map.fromList
-        . zip (G.nodes gr)
-        . fmap (leafToGraph (ClusterGraph gr) simMat)
-        . G.nodes
-        $ gr
+        . Map.unions
+        . fmap (\ (!x, _)
+               -> Map.singleton x
+                . leafToGraph edgeThresh (ClusterGraph gr) simMat
+                $ x
+               )
+        . F.toList
+        . getGraphLeaves gr
+        $ 0
 
 -- | Generate a graph from a node in the ClusterGraph. Determines the edge from
 -- either the similarity matrix (trivial) or the B2 matrix from a spectral
 -- hierarchical clustering.
 leafToGraph
     :: (TreeItem a, MatrixLike b)
-    => ClusterGraph a -> SimMatrix b -> G.Node -> LeafGraph T.Text
-leafToGraph gr simMat n =
-    LeafGraph . G.mkGraph nodes . fmap normByMaxWeight $ edges -- Divide by the maximum weight
+    => EdgeThreshold
+    -> ClusterGraph a
+    -> SimMatrix b
+    -> G.Node
+    -> LeafGraph T.Text
+leafToGraph (EdgeThreshold edgeThresh) gr simMat n =
+    LeafGraph . G.mkGraph nodes $ edges -- Divide by the maximum weight
   where
     edges :: [G.LEdge Double]
-    edges = filter (\(i, j, _) -> i /= j)
+    edges = Fold.fold normByMaxWeight
+          . filter (\(i, j, v) -> i /= j && v > edgeThresh)
           $ (\(i, _) (j, _) -> getEdge simMat i j) <$> nodes <*> nodes -- Ignore self edges.
     nodes :: [G.LNode (G.Node, T.Text)]
     nodes = fmap (\ (!n, !l) -> (n, (n, l)))
           . flip zip items
-          . fmap (fromMaybe (error "No row found for item."))
+          . fmap (fromMaybe (error "No row in matrix found for item in tree."))
           . Fold.fold getIndices
           . getRowNames
           . getMat
           $ simMat
-    normByMaxWeight = L.over L._3 (/ maxWeight)
-    maxWeight = maximum . fmap (abs . L.view L._3) $ edges
+    normByMaxWeight = (\m xs -> fmap (L.over L._3 (/ fromMaybe 1 m)) xs)
+                  <$> Fold.premap (abs . L.view L._3) Fold.maximum
+                  <*> Fold.list
     getIndices = sequenceA $ fmap Fold.elemIndex items
     items      = fmap (unId . getId) . F.toList $ getGraphLeafItems gr n
-    getMat (SimilarityMatrix x) = getMatrix x
-    getMat (B2Matrix x)         = getMatrix x
+    getMat (SimilarityMatrix x) = x
+    getMat (B2Matrix x)         = x
 
 -- | Get an edge where the nodes are rows of a matrix.
 getEdge :: (MatrixLike a) => SimMatrix a -> G.Node -> G.Node -> G.LEdge Double

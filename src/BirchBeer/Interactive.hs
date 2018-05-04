@@ -59,7 +59,7 @@ interactiveDiagram dend labelMap mat simMat = graphicalUI' "birch-beer" $ do
                         ]
     drawContinuousGene' <- TS.entry "GENE for DrawItem DrawContinuous"
     drawCollection' <-
-        TS.radioButton "Leaf shape" PieRing [PieChart, PieNone, CollectionGraph]
+        TS.radioButton "Leaf shape" PieRing [PieChart, PieNone, CollectionGraph 0]
     drawMark' <- TS.radioButton "Node mark" MarkNone [MarkModularity]
     drawNodeNumber' <- fmap DrawNodeNumber $ TS.checkBox "Show node number"
     drawMaxNodeSize' <-

@@ -212,8 +212,8 @@ drawCollectionItem
     -> G.Node
     -> Seq.Seq a
     -> Diagram B
-drawCollectionItem CollectionGraph _ Nothing _ _ = mempty
-drawCollectionItem CollectionGraph _ (Just (LeafGraphDiaMap lgdm)) n _ =
+drawCollectionItem (CollectionGraph _) _ Nothing _ _ = mempty
+drawCollectionItem (CollectionGraph _) _ (Just (LeafGraphDiaMap lgdm)) n _ =
     fromMaybe mempty . Map.lookup n $ lgdm
 drawCollectionItem _ Nothing _ _ _ = mempty
 drawCollectionItem drawCollection (Just (ItemColorMap cm)) _ _ items =
@@ -236,7 +236,7 @@ drawCollectionItem drawCollection (Just (ItemColorMap cm)) _ _ items =
 
 -- | Draw a single item.
 getItem :: Kolor -> Diagram B
-getItem color = circle 1 # lc black # fc color # lwL 0.1
+getItem color = circle 1 # lc black # fc color # lw 0.1 -- Unfortunately cannot change to lwL or they disappear with certain scalings.
 
 plotLabelLegend :: LabelColorMap -> Diagram B
 plotLabelLegend = flip (drawLegend emptyBox) legendOpts
@@ -433,16 +433,16 @@ drawGraphNode opts@(DrawConfig { _drawLeaf = (DrawItem drawType) }) cm ncm _ lgd
     background PieNone = roundedRect (width itemsDia) (height itemsDia) 1 # fc white # lw none # scaleUToY (scaleVal * 1.1)
     background _       = circle 1 # fc white # lw none # scaleUToY scaleVal
     itemsDia              = getItemsDia $ _drawCollection opts
-    getItemsDia CollectionGraph = mempty
     getItemsDia PieNone   = scaleUToY scaleVal $ drawGraphItem cm items
     getItemsDia PieChart  = mempty
-    getItemsDia _         = scaleUToY (0.50 * scaleVal) $ drawGraphItem cm items
+    getItemsDia (CollectionGraph _)= mempty
+    getItemsDia _         = scaleUToY (0.5 * scaleVal) $ drawGraphItem cm items
     collectionDia PieNone = mempty
     collectionDia x       =
         scaleUToY scaleVal $ drawCollectionItem x cm lgdm n items
     scaleVal = if unDrawNoScaleNodesFlag . _drawNoScaleNodesFlag $ opts
                 then maxNodeSize
-                else getScaledLeafSize maxClusterSize' maxNodeSize  items
+                else getScaledLeafSize maxClusterSize' maxNodeSize items
     maxNodeSize = unDrawMaxNodeSize . _drawMaxNodeSize $ opts
     maxClusterSize' = maxClusterSize . unClusterGraph $ gr
     textDia True  = text (show n) # fc black
@@ -451,7 +451,7 @@ drawGraphNode opts@(DrawConfig { _drawLeaf = (DrawItem drawType) }) cm ncm _ lgd
 drawGraphNode opts cm ncm mcm _ gr (n, Nothing) pos =
     (mark mcm <> mainNode) # moveTo pos
   where
-    mainNode = ((textDia dnn # fontSize (local $ smallestAxis mainDia)) <> mainDia)
+    mainNode = ((textDia dnn # fontSize (local $ 1)) <> mainDia)
              # scaleUToY (getNodeSize (_drawNoScaleNodesFlag opts) items)
     mainDia = circle 1 # fc color # rootDiffer n
     mark :: Maybe MarkColorMap -> Diagram B
@@ -502,7 +502,7 @@ plotLeafGraph cm (LeafGraph gr) = do
                 # moveTo pos
         drawEdge _ p1 _ p2 w p = arrowBetween' (opts p) p1 p2
                                # lc (blend w black white)
-                               # lwL 5
+                               # lw 5
         opts p = with
                & gaps .~ 0
                & arrowHead .~ noHead
