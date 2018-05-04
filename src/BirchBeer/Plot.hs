@@ -431,6 +431,7 @@ drawGraphNode opts@(DrawConfig { _drawLeaf = (DrawItem drawType) }) cm ncm _ lgd
                    <> background (_drawCollection opts)
                     )
     background PieNone = roundedRect (width itemsDia) (height itemsDia) 1 # fc white # lw none # scaleUToY (scaleVal * 1.1)
+    background x@(CollectionGraph _) = roundedRect (width (collectionDia x)) (height (collectionDia x)) 1 # fc white # lw none # scaleUToY (scaleVal * 1.1)
     background _       = circle 1 # fc white # lw none # scaleUToY scaleVal
     itemsDia              = getItemsDia $ _drawCollection opts
     getItemsDia PieNone   = scaleUToY scaleVal $ drawGraphItem cm items
@@ -489,7 +490,7 @@ plotLeafGraph cm (LeafGraph gr) = do
             -- , G.globalAttributes = [G.GraphAttrs { G.attrs = [G.Sep $ G.DVal 36] }]
             }
 
-    layout <- G.layoutGraph' params G.Neato gr
+    layout <- G.layoutGraph' params G.TwoPi gr
 
     let drawNode (_, x) pos =
             ( getItem
@@ -502,7 +503,7 @@ plotLeafGraph cm (LeafGraph gr) = do
                 # moveTo pos
         drawEdge _ p1 _ p2 w p = arrowBetween' (opts p) p1 p2
                                # lc (blend w black white)
-                               # lw 5
+                               # lwL 5
         opts p = with
                & gaps .~ 0
                & arrowHead .~ noHead
