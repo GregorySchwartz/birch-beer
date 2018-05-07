@@ -15,6 +15,8 @@ import Data.List (foldl')
 import Data.Maybe (fromMaybe, isJust)
 import qualified Control.Lens as L
 import qualified Data.Clustering.Hierarchical as HC
+import qualified Data.Foldable as F
+import qualified Data.Set as Set
 import qualified Data.Text as T
 import qualified Data.Vector as V
 import qualified Diagrams.Backend.Cairo as D
@@ -120,11 +122,27 @@ mainDiagram config = do
                     fmap (getNodeColorMapFromDiversity order' gr) itemColorMap
                 _ -> fmap (getNodeColorMapFromItems gr) $ itemColorMap
     -- | Get the graph at each leaf (if applicable).
-        edgeThreshold (CollectionGraph x) = EdgeThreshold x
-        edgeThreshold _ = EdgeThreshold 0
+        getAllLeafNodesSet = Set.fromList
+                           . F.toList
+                           . fmap fst
+                           . mconcat
+                           . fmap (getGraphLeaves (unClusterGraph gr))
+        (maxWeight, edgeThreshold, leafGraphNodes) =
+            case drawCollection' of
+              (CollectionGraph m e l) ->
+                    ( MaxWeight m
+                    , EdgeThreshold e
+                    , LeafGraphNodes . getAllLeafNodesSet $ l
+                    )
+              _ -> (MaxWeight 1, EdgeThreshold 0, LeafGraphNodes Set.empty)
         leafGraphMap =
             fmap
-                (clusterGraphToLeafGraphMap (edgeThreshold drawCollection') gr)
+                ( clusterGraphToLeafGraphMap
+                    maxWeight
+                    edgeThreshold
+                    leafGraphNodes
+                    gr
+                )
                 simMat
 
     -- | Get the legend of the diagram.

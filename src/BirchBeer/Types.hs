@@ -31,6 +31,7 @@ import qualified Data.Aeson.Types as A
 import qualified Data.Clustering.Hierarchical as HC
 import qualified Data.Graph.Inductive as G
 import qualified Data.Sequence as Seq
+import qualified Data.Set as Set
 import qualified Data.Sparse.Common as S
 import qualified Data.Text as T
 import qualified Data.Vector as V
@@ -76,6 +77,12 @@ newtype Order = Order
     } deriving (Read,Show)
 newtype EdgeThreshold = EdgeThreshold
     { unEdgeThreshold :: Double
+    } deriving (Read,Show)
+newtype MaxWeight = MaxWeight
+    { unMaxWeight :: Double
+    } deriving (Read,Show)
+newtype LeafGraphNodes = LeafGraphNodes
+    { unLeafGraphNodes :: Set.Set G.Node
     } deriving (Read,Show)
 newtype DrawMaxNodeSize = DrawMaxNodeSize
     { unDrawMaxNodeSize :: Double
@@ -133,7 +140,7 @@ data DrawItemType
     | DrawDiversity
     deriving (Read,Show)
 data DrawLeaf       = DrawItem DrawItemType | DrawText deriving (Read, Show)
-data DrawCollection = CollectionGraph Double | PieRing | PieChart | PieNone deriving (Read, Show)
+data DrawCollection = CollectionGraph Double Double [Int] | PieRing | PieChart | PieNone deriving (Read, Show)
 data DrawNodeMark   = MarkModularity | MarkNone deriving (Read, Show)
 
 data Palette = Set1 | Hcl

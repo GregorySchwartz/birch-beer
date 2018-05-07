@@ -21,6 +21,7 @@ import qualified Data.Foldable as F
 import qualified Data.Graph.Inductive as G
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
+import qualified Data.Set as Set
 import qualified Data.Sparse.Common as S
 import qualified Data.Text as T
 
@@ -31,15 +32,25 @@ import BirchBeer.Utility
 -- | Convert a ClusterGraph to a map of LeafGraphs.
 clusterGraphToLeafGraphMap
     :: (TreeItem a, MatrixLike b)
-    => EdgeThreshold -> ClusterGraph a -> SimMatrix b -> LeafGraphMap T.Text
-clusterGraphToLeafGraphMap edgeThresh (ClusterGraph gr) simMat =
+    => MaxWeight
+    -> EdgeThreshold
+    -> LeafGraphNodes
+    -> ClusterGraph a
+    -> SimMatrix b
+    -> LeafGraphMap T.Text
+clusterGraphToLeafGraphMap maxWeight edgeThresh leafGraphNodes (ClusterGraph gr) simMat =
     LeafGraphMap
         . Map.unions
         . fmap (\ (!x, _)
-               -> Map.singleton x
-                . leafToGraph edgeThresh (ClusterGraph gr) simMat
+            -> Map.singleton x
+                . leafToGraph
+                    maxWeight
+                    edgeThresh
+                    leafGraphNodes
+                    (ClusterGraph gr)
+                    simMat
                 $ x
-               )
+            )
         . F.toList
         . getGraphLeaves gr
         $ 0
@@ -49,18 +60,22 @@ clusterGraphToLeafGraphMap edgeThresh (ClusterGraph gr) simMat =
 -- hierarchical clustering.
 leafToGraph
     :: (TreeItem a, MatrixLike b)
-    => EdgeThreshold
+    => MaxWeight
+    -> EdgeThreshold
+    -> LeafGraphNodes
     -> ClusterGraph a
     -> SimMatrix b
     -> G.Node
     -> LeafGraph T.Text
-leafToGraph (EdgeThreshold edgeThresh) gr simMat n =
-    LeafGraph . G.mkGraph nodes $ edges -- Divide by the maximum weight
+leafToGraph (MaxWeight maxWeight) (EdgeThreshold edgeThresh) (LeafGraphNodes leafGraphNodes) gr simMat n =
+    LeafGraph . G.mkGraph nodes $ edges
   where
     edges :: [G.LEdge Double]
-    edges = Fold.fold normByMaxWeight
-          . filter (\(i, j, v) -> i /= j && v > edgeThresh)
-          $ (\(i, _) (j, _) -> getEdge simMat i j) <$> nodes <*> nodes -- Ignore self edges.
+    edges = if Set.member n leafGraphNodes || Set.null leafGraphNodes
+                then filter (\(i, j, v) -> i /= j && v > edgeThresh)
+                   . fmap (L.over L._3 (/ maxWeight))
+                   $ (\(i, _) (j, _) -> getEdge simMat i j) <$> nodes <*> nodes -- Ignore self edges.
+                else []
     nodes :: [G.LNode (G.Node, T.Text)]
     nodes = fmap (\ (!n, !l) -> (n, (n, l)))
           . flip zip items
@@ -69,9 +84,9 @@ leafToGraph (EdgeThreshold edgeThresh) gr simMat n =
           . getRowNames
           . getMat
           $ simMat
-    normByMaxWeight = (\m xs -> fmap (L.over L._3 (/ fromMaybe 1 m)) xs)
-                  <$> Fold.premap (abs . L.view L._3) Fold.maximum
-                  <*> Fold.list
+    -- normByMaxWeight = (\m xs -> fmap (L.over L._3 (/ fromMaybe 1 m)) xs) -- Do not normalize here.
+    --               <$> Fold.premap (abs . L.view L._3) Fold.maximum
+    --               <*> Fold.list
     getIndices = sequenceA $ fmap Fold.elemIndex items
     items      = fmap (unId . getId) . F.toList $ getGraphLeafItems gr n
     getMat (SimilarityMatrix x) = x

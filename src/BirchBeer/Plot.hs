@@ -212,8 +212,8 @@ drawCollectionItem
     -> G.Node
     -> Seq.Seq a
     -> Diagram B
-drawCollectionItem (CollectionGraph _) _ Nothing _ _ = mempty
-drawCollectionItem (CollectionGraph _) _ (Just (LeafGraphDiaMap lgdm)) n _ =
+drawCollectionItem (CollectionGraph{}) _ Nothing _ _ = mempty
+drawCollectionItem (CollectionGraph{}) _ (Just (LeafGraphDiaMap lgdm)) n _ =
     fromMaybe mempty . Map.lookup n $ lgdm
 drawCollectionItem _ Nothing _ _ _ = mempty
 drawCollectionItem drawCollection (Just (ItemColorMap cm)) _ _ items =
@@ -236,7 +236,7 @@ drawCollectionItem drawCollection (Just (ItemColorMap cm)) _ _ items =
 
 -- | Draw a single item.
 getItem :: Kolor -> Diagram B
-getItem color = circle 1 # lc black # fc color # lw 0.1 -- Unfortunately cannot change to lwL or they disappear with certain scalings.
+getItem color = circle 1 # lc black # fc color # lwL 0.1 -- Unfortunately cannot change to lwL or they disappear with certain scalings.
 
 plotLabelLegend :: LabelColorMap -> Diagram B
 plotLabelLegend = flip (drawLegend emptyBox) legendOpts
@@ -431,12 +431,12 @@ drawGraphNode opts@(DrawConfig { _drawLeaf = (DrawItem drawType) }) cm ncm _ lgd
                    <> background (_drawCollection opts)
                     )
     background PieNone = roundedRect (width itemsDia) (height itemsDia) 1 # fc white # lw none # scaleUToY (scaleVal * 1.1)
-    background x@(CollectionGraph _) = roundedRect (width (collectionDia x)) (height (collectionDia x)) 1 # fc white # lw none # scaleUToY (scaleVal * 1.1)
+    background x@(CollectionGraph{}) = roundedRect (width (collectionDia x)) (height (collectionDia x)) 1 # fc white # lw none # scaleUToY (scaleVal * 1.1)
     background _       = circle 1 # fc white # lw none # scaleUToY scaleVal
     itemsDia              = getItemsDia $ _drawCollection opts
     getItemsDia PieNone   = scaleUToY scaleVal $ drawGraphItem cm items
     getItemsDia PieChart  = mempty
-    getItemsDia (CollectionGraph _)= mempty
+    getItemsDia (CollectionGraph{}) = mempty
     getItemsDia _         = scaleUToY (0.5 * scaleVal) $ drawGraphItem cm items
     collectionDia PieNone = mempty
     collectionDia x       =
@@ -490,7 +490,7 @@ plotLeafGraph cm (LeafGraph gr) = do
             -- , G.globalAttributes = [G.GraphAttrs { G.attrs = [G.Sep $ G.DVal 36] }]
             }
 
-    layout <- G.layoutGraph' params G.TwoPi gr
+    layout <- G.layoutGraph G.Neato gr
 
     let drawNode (_, x) pos =
             ( getItem
