@@ -189,16 +189,9 @@ instance MatrixLike (S.SpMatrix Double) where
     getRowNames mat = V.fromList . fmap showt $ [1..S.nrows mat]
     getColNames mat = V.fromList . fmap showt $ [1..S.nrows mat]
 
-deriving instance (Read a) => Read (HC.Dendrogram a)
-deriving instance Generic (HC.Dendrogram a)
-
 -- instance Generic (Colour a)
 -- instance NFData a => NFData (Colour a)
 instance NFData (Colour a) where rnf x = seq x ()
-
-instance (A.ToJSON a) => A.ToJSON (HC.Dendrogram a) where
-    toEncoding = A.genericToEncoding A.defaultOptions
-instance (A.FromJSON a) => A.FromJSON (HC.Dendrogram a)
 
 deriving instance (Eq a, Ord a, Fractional a) => Ord (RGB a)
 

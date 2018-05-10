@@ -27,6 +27,7 @@ import qualified Data.Sparse.Common as S
 import qualified Data.Text as T
 import qualified Data.Text.Read as T
 import qualified Data.Vector as V
+import qualified Math.Clustering.Hierarchical.Spectral.Types ()
 
 -- Local
 import BirchBeer.Types

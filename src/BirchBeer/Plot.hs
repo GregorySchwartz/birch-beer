@@ -181,8 +181,8 @@ drawGraphLabel
     => Maybe ItemColorMap -> Seq.Seq a -> Diagram B
 drawGraphLabel Nothing items =
     case Seq.length items of
-        1 -> stroke (textSVG (T.unpack . unId . getId . flip Seq.index 0 $ items) 1) # fc black # center
-        s -> stroke (textSVG (show s) 1) # fc black # center
+        1 -> stroke (textSVG (T.unpack . unId . getId . flip Seq.index 0 $ items) 1) # fc black # lw none # center
+        s -> stroke (textSVG (show s) 1) # fc black # lw none # center
 drawGraphLabel cm items =
     case Seq.length items of
         1 -> stroke (textSVG (T.unpack . unId . getId . flip Seq.index 0 $ items) 1) # fc black # lw none # center
