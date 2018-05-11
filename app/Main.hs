@@ -13,11 +13,16 @@ module Main where
 
 -- Remote
 import Control.Monad (when)
+import Data.Char (ord)
 import Data.Colour.SRGB (sRGB24read)
+import Data.List (isSuffixOf)
 import Data.Maybe (fromMaybe)
+import Math.Clustering.Hierarchical.Spectral.Load (readSparseAdjMatrix)
 import Options.Generic
+import System.IO (openFile, hClose, IOMode (..))
 import qualified Control.Lens as L
 import qualified Data.Aeson as A
+import qualified Data.Csv as CSV
 import qualified Data.Sparse.Common as S
 import qualified Data.Text as T
 import qualified Data.Vector as V
@@ -36,7 +41,7 @@ import BirchBeer.Utility
 -- | Command line arguments
 data Options = Options
     { input :: String <?> "(FILE) The input JSON file."
-    , inputMatrix :: Maybe String <?> "([Nothing] | FILE) The input adjacency matrix file for CollectionGraph (matrix market format)."
+    , inputMatrix :: Maybe String <?> "([Nothing] | FILE) The input adjacency matrix file for CollectionGraph (matrix market format if ends in .mtx, \"i,j,value\" without header otherwise and text labels will be sorted when converting indices)."
     , output :: Maybe String <?> "([dendrogram.svg] | FILE) The output file."
     , delimiter :: Maybe Char <?> "([,] | CHAR) The delimiter for csv files."
     , labelsFile :: Maybe String <?> "([Nothing] | FILE) The input file containing the label for each item, with \"item,label\" header."
@@ -131,7 +136,22 @@ main = do
                         --     mat
                     _ -> sequence . fmap (loadLabelData delimiter') $ labelsFile'
 
-    simMat <- sequence . fmap (fmap SimilarityMatrix . loadMatrix) $ inputMatrix'
+    let readMat file =
+            if isSuffixOf ".mtx" file
+                then fmap SimilarityMatrix . loadMatrix $ file
+                else do
+                    let decodeOpt = CSV.defaultDecodeOptions
+                                    { CSV.decDelimiter =
+                                        fromIntegral (ord . unDelimiter $ delimiter')
+                                    }
+
+                    h <- openFile file ReadMode
+                    (_, mat) <- readSparseAdjMatrix decodeOpt h
+                    hClose h
+
+                    return . SimilarityMatrix $ mat
+
+    simMat <- sequence . fmap readMat $ inputMatrix'
 
     let config :: Config T.Text (S.SpMatrix Double)
         config = Config { _birchLabelMap         = labelMap

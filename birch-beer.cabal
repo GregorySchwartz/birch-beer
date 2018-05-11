@@ -71,10 +71,12 @@ executable birch-beer
   build-depends:       base
                      , aeson
                      , birch-beer
+                     , cassava
                      , colour
                      , diagrams
                      , diagrams-cairo
                      , diagrams-lib
+                     , hierarchical-spectral-clustering
                      , lens
                      , optparse-generic
                      , sparse-linear-algebra
