@@ -173,6 +173,12 @@ data Config a b = Config
     , _birchSimMat           :: Maybe (SimMatrix b)
     }
 
+data NamedMatrix = NamedMatrix
+    { _namedMat :: S.SpMatrix Double
+    , _namedRows :: V.Vector T.Text
+    , _namedCols :: V.Vector T.Text
+    }
+
 class TreeItem a where
     getId :: a -> Id
 
@@ -188,6 +194,11 @@ instance MatrixLike (S.SpMatrix Double) where
     getMatrix       = id
     getRowNames mat = V.fromList . fmap showt $ [1..S.nrows mat]
     getColNames mat = V.fromList . fmap showt $ [1..S.nrows mat]
+
+instance MatrixLike NamedMatrix where
+    getMatrix   = _namedMat
+    getRowNames = _namedRows
+    getColNames = _namedCols
 
 -- instance Generic (Colour a)
 -- instance NFData a => NFData (Colour a)

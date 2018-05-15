@@ -16,6 +16,7 @@ module BirchBeer.Utility
     , absLog2
     , dendrogramToGraph
     , getGraphLeaves
+    , getGraphLeavesCycles
     , getGraphLeavesWithParents
     , getGraphLeafItems
     , degreeToRadian
@@ -127,6 +128,20 @@ getGraphLeaves gr n =
             . G.lab gr
             $ n
         xs -> mconcat . fmap (getGraphLeaves gr) $ xs
+
+-- | Get leaves of a tree graph given a node. Allows for cycles.
+getGraphLeavesCycles :: G.Graph gr => [G.Node] -> gr a b -> G.Node -> Seq.Seq a
+getGraphLeavesCycles prev gr n =
+    case noCycle n of
+        [] -> Seq.singleton
+            . fromMaybe (error "Node has no label.")
+            . G.lab gr
+            $ n
+        xs -> mconcat . fmap (getGraphLeavesCycles (n:xs) gr) $ xs
+  where
+    noCycle 0 = G.suc gr 0
+    noCycle x = filter (not . flip Set.member preSet) $ G.suc gr x
+    preSet  = Set.fromList $ n : prev
 
 -- | Get leaves of a tree graph given a node with a breadcrumb trail of parent
 -- node IDs. The first element in the cluster list is the node the item belongs

@@ -20,6 +20,7 @@ import Data.Maybe (fromMaybe)
 import Math.Clustering.Hierarchical.Spectral.Load (readSparseAdjMatrix)
 import Options.Generic
 import System.IO (openFile, hClose, IOMode (..))
+import TextShow (showt)
 import qualified Control.Lens as L
 import qualified Data.Aeson as A
 import qualified Data.Csv as CSV
@@ -138,7 +139,12 @@ main = do
 
     let readMat file =
             if isSuffixOf ".mtx" file
-                then fmap SimilarityMatrix . loadMatrix $ file
+                then do
+                    mat <- loadMatrix file
+
+                    let items = V.fromList . fmap showt $ [1..S.nrows mat]
+
+                    return . SimilarityMatrix $ NamedMatrix mat items items
                 else do
                     let decodeOpt = CSV.defaultDecodeOptions
                                     { CSV.decDelimiter =
@@ -146,14 +152,14 @@ main = do
                                     }
 
                     h <- openFile file ReadMode
-                    (_, mat) <- readSparseAdjMatrix decodeOpt h
+                    (items, mat) <- readSparseAdjMatrix decodeOpt h
                     hClose h
 
-                    return . SimilarityMatrix $ mat
+                    return . SimilarityMatrix $ NamedMatrix mat items items
 
     simMat <- sequence . fmap readMat $ inputMatrix'
 
-    let config :: Config T.Text (S.SpMatrix Double)
+    let config :: Config T.Text NamedMatrix
         config = Config { _birchLabelMap         = labelMap
                         , _birchMinSize          = minSize'
                         , _birchMaxStep          = maxStep'
@@ -180,6 +186,6 @@ main = do
             (D.mkHeight 1000)
             plot
 
-    when (unHelpful . interactive $ opts) $ interactiveDiagram dend labelMap (Nothing :: Maybe (S.SpMatrix Double)) simMat
+    when (unHelpful . interactive $ opts) $ interactiveDiagram dend labelMap (Nothing :: Maybe NamedMatrix) simMat
 
     return ()

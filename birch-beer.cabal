@@ -81,6 +81,7 @@ executable birch-beer
                      , optparse-generic
                      , sparse-linear-algebra
                      , text
+                     , text-show
                      , vector
   default-language:    Haskell2010
 
