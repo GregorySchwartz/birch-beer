@@ -40,6 +40,7 @@ packages:
 # Dependency packages to be pulled from upstream that are not in the resolver
 # (e.g., acme-missiles-0.3)
 extra-deps:
+- /home/gw/code/utility/eigen-sparse-utils/
 - /home/gw/code/utility/hierarchical-spectral-clustering/
 - /home/gw/code/utility/modularity/
 - /home/gw/code/utility/spectral-clustering/
@@ -54,6 +55,7 @@ extra-deps:
 - diagrams-solve-0.1.1
 - diagrams-svg-1.4.1.1
 - dual-tree-0.2.1.1
+- eigen-2.1.7
 - fast-math-1.0.2
 - gio-0.13.4.1
 - graphviz-2999.19.0.0

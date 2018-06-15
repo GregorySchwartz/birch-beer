@@ -110,16 +110,20 @@ mainDiagram config = do
     itemColorMap <-
         case drawLeaf' of
             DrawItem (DrawContinuous x) ->
-                fmap (fmap (getItemColorMapContinuous (Feature x))) mat
+                fmap
+                    (fmap (getItemColorMapContinuous drawColors' (Feature x)))
+                    mat
             DrawItem DrawSumContinuous  ->
-                fmap (fmap getItemColorMapSumContinuous) mat
+                fmap (fmap (getItemColorMapSumContinuous drawColors')) mat
             _                           -> return defaultGetItemColorMap
 
     -- | Get the node color map.
     let nodeColorMap =
             case drawLeaf' of
                 (DrawItem DrawDiversity) ->
-                    fmap (getNodeColorMapFromDiversity order' gr) itemColorMap
+                    fmap
+                        (getNodeColorMapFromDiversity drawColors' order' gr)
+                        itemColorMap
                 _ -> fmap (getNodeColorMapFromItems gr) $ itemColorMap
     -- | Get the graph at each leaf (if applicable).
         getAllLeafNodesSet = Set.fromList
@@ -153,6 +157,7 @@ mainDiagram config = do
                         mat
                 (DrawItem DrawSumContinuous) ->
                     fmap (fmap plotSumContinuousLegend) mat
+                (DrawItem DrawDiversity) -> return mempty
                 _ -> return $ fmap plotLabelLegend labelColorMap
 
     -- | Get the entire diagram.

@@ -26,7 +26,7 @@ module BirchBeer.ColorMap
 
 -- Remote
 import Control.Monad (join)
-import Data.Colour (AffineSpace (..), withOpacity)
+import Data.Colour (AffineSpace (..), withOpacity, blend)
 import Data.Colour.Names (black)
 import Data.Function (on)
 import Data.Int (Int32)
@@ -50,6 +50,7 @@ import qualified Data.Set as Set
 import qualified Data.Sparse.Common as S
 import qualified Data.Text as T
 import qualified Data.Vector as V
+import Safe (atMay)
 
 -- Local
 import BirchBeer.Types
@@ -149,10 +150,14 @@ labelToItemColorMap :: LabelColorMap -> LabelMap -> ItemColorMap
 labelToItemColorMap (LabelColorMap lm) =
     ItemColorMap . Map.map (\x -> Map.findWithDefault black x lm) . unLabelMap
 
--- | Get the colors from a list of expressions.
-getContinuousColor :: [Double] -> [Colour.Colour Double]
-getContinuousColor =
-    fmap (\x -> Colour.sRGB 1 (1 - x) (1 - x))
+-- | Get the colors from a list of expressions from two colors.
+getContinuousColor
+    :: Colour.Colour Double
+    -> Colour.Colour Double
+    -> [Double]
+    -> [Colour.Colour Double]
+getContinuousColor highColor lowColor =
+    fmap (\x -> blend x highColor lowColor)
         . Fold.fold
             ( (\xs mi ma -> fmap (minMaxNorm (getExist mi) (getExist ma)) xs)
                     <$> Fold.list
@@ -163,13 +168,15 @@ getContinuousColor =
     getExist = fromMaybe (error "Feature does not exist or no cells found.")
 
 -- | Get the colors of each item, where the color is determined by features.
-getItemColorMapContinuous :: (MatrixLike a) => Feature -> a -> ItemColorMap
-getItemColorMapContinuous g mat
+getItemColorMapContinuous
+    :: (MatrixLike a)
+    => Maybe CustomColors -> Feature -> a -> ItemColorMap
+getItemColorMapContinuous customColors g mat
     | isNothing col = ItemColorMap Map.empty
     | otherwise = ItemColorMap
                 . Map.fromList
                 . zip (fmap Id . V.toList . getRowNames $ mat)
-                . getContinuousColor
+                . getContinuousColor highColor lowColor
                 . S.toDenseListSV
                 . flip S.extractCol (colErr col)
                 . getMatrix
@@ -180,6 +187,8 @@ getItemColorMapContinuous g mat
         . fmap Feature
         . getColNames
         $ mat
+    highColor = fromMaybe red $ customColors >>= flip atMay 0 . unCustomColors
+    lowColor  = fromMaybe white $ customColors >>= flip atMay 1 . unCustomColors
 
 -- | Get the labels of each item, where the label is determined by a binary high
 -- / low features determined by a threshold. Multiple features can be used
@@ -215,16 +224,19 @@ getLabelMapThresholdContinuous gs mat
 
 -- | Get the colors of each item, where the color is determined by the sum of
 -- features in that cell.
-getItemColorMapSumContinuous :: (MatrixLike a) => a -> ItemColorMap
-getItemColorMapSumContinuous mat =
+getItemColorMapSumContinuous :: (MatrixLike a) => Maybe CustomColors -> a -> ItemColorMap
+getItemColorMapSumContinuous customColors mat =
     ItemColorMap
         . Map.fromList
         . zip (fmap Id . V.toList . getRowNames $ mat)
-        . getContinuousColor
+        . getContinuousColor highColor lowColor
         . fmap sum
         . S.toRowsL
         . getMatrix
         $ mat
+  where
+    highColor = fromMaybe red $ customColors >>= flip atMay 0 . unCustomColors
+    lowColor  = fromMaybe white $ customColors >>= flip atMay 1 . unCustomColors
 
 -- | Use the outgoing edges of a node to define the mark around the node.
 -- Min max normalization.
@@ -254,8 +266,12 @@ getNodeColorMapFromItems gr cm =
 -- from the non-leaves.
 getNodeColorMapFromDiversity
     :: (TreeItem a, Ord a)
-    => Order -> ClusterGraph a -> ItemColorMap -> NodeColorMap
-getNodeColorMapFromDiversity (Order order) gr cm =
+    => Maybe CustomColors
+    -> Order
+    -> ClusterGraph a
+    -> ItemColorMap
+    -> NodeColorMap
+getNodeColorMapFromDiversity customColors (Order order) gr cm =
     NodeColorMap
         . Map.fromList
         . mappend (zip innerNodes innerColors)
@@ -269,8 +285,10 @@ getNodeColorMapFromDiversity (Order order) gr cm =
     leafNodesSet = Set.fromList leafNodes
     leafColors   = colors leafNodes
     innerColors  = colors innerNodes
-    colors xs    = getContinuousColor
+    colors xs    = getContinuousColor highColor lowColor
                  $ fmap (diversity order . F.toList . getGraphLeafItems gr) xs
+    highColor    = fromMaybe red $ customColors >>= flip atMay 0 . unCustomColors
+    lowColor     = fromMaybe white $ customColors >>= flip atMay 1 . unCustomColors
 
 -- | Get the color of a node, defaulting to black.
 getNodeColor :: Maybe NodeColorMap -> G.Node -> Colour Double
