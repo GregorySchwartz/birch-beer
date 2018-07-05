@@ -75,8 +75,9 @@ modifiers = lispCaseModifiers { shortNameModifier = short }
     short "drawNodeNumber"       = Just 'N'
     short "drawMark"             = Just 'K'
     short "drawColors"           = Just 'R'
-    short "drawNoScaleNodes"     = Just 'O'
+    short "drawNoScaleNodes"     = Just 'W'
     short "drawMaxNodeSize"      = Just 'A'
+    short "order"                = Just 'O'
     short "interactive"          = Just 'I'
     short x                      = firstLetter x
 
