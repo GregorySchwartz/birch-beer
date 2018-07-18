@@ -43,7 +43,7 @@ import BirchBeer.Utility
 data Options = Options
     { input :: String <?> "(FILE) The input JSON file."
     , inputMatrix :: Maybe String <?> "([Nothing] | FILE) The input adjacency matrix file for CollectionGraph (matrix market format if ends in .mtx, \"i,j,value\" without header otherwise and text labels will be sorted when converting indices)."
-    , output :: Maybe String <?> "([dendrogram.svg] | FILE) The output file."
+    , output :: Maybe String <?> "([dendrogram.svg] | FILE) The filename for the dendrogram. Supported formats are PNG, PS, PDF, and SVG."
     , delimiter :: Maybe Char <?> "([,] | CHAR) The delimiter for csv files."
     , labelsFile :: Maybe String <?> "([Nothing] | FILE) The input file containing the label for each item, with \"item,label\" header."
     , minSize :: Maybe Int <?> "([1] | INT) The minimum size of a cluster. Defaults to 1."
