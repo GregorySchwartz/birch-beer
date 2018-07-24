@@ -20,6 +20,7 @@ import Data.Maybe (fromMaybe)
 import Math.Clustering.Hierarchical.Spectral.Load (readSparseAdjMatrix)
 import Options.Generic
 import System.IO (openFile, hClose, IOMode (..))
+import Text.Read (readMaybe)
 import TextShow (showt)
 import qualified Control.Lens as L
 import qualified Data.Aeson as A
@@ -102,12 +103,24 @@ main = do
         smartCutoff'      = fmap SmartCutoff . unHelpful . smartCutoff $ opts
         order'            = fmap Order . unHelpful . order $ opts
         drawLeaf'         =
-            maybe (maybe DrawText (const (DrawItem DrawLabel)) labelsFile') read
+            maybe
+              (maybe DrawText (const (DrawItem DrawLabel)) labelsFile')
+              (fromMaybe (error "Cannot read draw-leaf.") . readMaybe)
                 . unHelpful
                 . drawLeaf
                 $ opts
-        drawCollection'   = maybe PieChart read . unHelpful . drawCollection $ opts
-        drawMark'         = maybe MarkNone read . unHelpful . drawMark $ opts
+        drawCollection'   = maybe
+                              PieChart
+                              (fromMaybe (error "Cannot read draw-collection.") . readMaybe)
+                          . unHelpful
+                          . drawCollection
+                          $ opts
+        drawMark'         = maybe
+                                MarkNone
+                                (fromMaybe (error "Cannot read draw-mark.") . readMaybe)
+                          . unHelpful
+                          . drawMark
+                          $ opts
         drawNodeNumber'   = DrawNodeNumber . unHelpful . drawNodeNumber $ opts
         drawMaxNodeSize'  =
             DrawMaxNodeSize . fromMaybe 72 . unHelpful . drawMaxNodeSize $ opts
