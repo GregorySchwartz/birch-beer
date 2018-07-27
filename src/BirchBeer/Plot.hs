@@ -510,6 +510,7 @@ plotLeafGraph cm (LeafGraph gr) = do
                & arrowShaft .~ (unLoc . head $ pathTrails p)
         treeDia =
             G.drawGraph'
+                G.VerticesOnTop
                 drawNode
                 drawEdge
                 layout
@@ -550,6 +551,7 @@ plotGraph legend opts cm ncm mcm lgm (ClusterGraph gr) = do
 
     let treeDia =
             G.drawGraph'
+                G.VerticesOnTop
                 (drawGraphNode opts cm ncm mcm lgdm (ClusterGraph gr))
                 (drawGraphPath opts ncm (ClusterGraph gr))
                 layout
