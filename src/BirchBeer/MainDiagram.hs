@@ -11,6 +11,7 @@ module BirchBeer.MainDiagram
     ) where
 
 -- Remote
+import Data.Bool (bool)
 import Data.List (foldl')
 import Data.Maybe (fromMaybe, isJust)
 import qualified Control.Lens as L
@@ -68,6 +69,8 @@ mainDiagram config = do
         drawNodeNumber'   = _birchDrawNodeNumber config
         drawMaxNodeSize'  = _birchDrawMaxNodeSize config
         drawNoScaleNodes' = _birchDrawNoScaleNodes config
+        drawLegendSubset' = _birchDrawLegendSubset config
+        drawLegendSep'    = _birchDrawLegendSep config
         drawColors'       = _birchDrawColors config
         order'            = fromMaybe (Order 1) $ _birchOrder config
         mat               = return $ _birchMat config
@@ -90,6 +93,7 @@ mainDiagram config = do
                                 drawNodeNumber'
                                 drawMaxNodeSize'
                                 drawNoScaleNodes'
+                                drawLegendSep'
 
     -- Get the color of each label.
     let labelColorMap =
@@ -158,7 +162,16 @@ mainDiagram config = do
                 (DrawItem DrawSumContinuous) ->
                     fmap (fmap plotSumContinuousLegend) mat
                 (DrawItem DrawDiversity) -> return mempty
-                _ -> return $ fmap plotLabelLegend labelColorMap
+                _ -> return $ do
+                    lm <- labelMap'
+                    lcm <- labelColorMap
+                    return
+                        . plotLabelLegend
+                        . bool
+                              id
+                              (subsetLabelColorMap gr lm)
+                              (unDrawLegendSubset drawLegendSubset')
+                        $ lcm
 
     -- | Get the entire diagram.
     plot <- plotGraph

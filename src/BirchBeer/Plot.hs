@@ -560,7 +560,7 @@ plotGraph legend opts cm ncm mcm lgm (ClusterGraph gr) = do
                 (Just l) ->
                     pad 1
                         . hsep
-                            1
+                            (unDrawLegendSep . _drawLegendSep $ opts)
                         $   [ alignY 1.5 . lw 0.3 . center . scaleUToX (width treeDia / 8) $ l
                             , alignT . center $ treeDia
                             ]

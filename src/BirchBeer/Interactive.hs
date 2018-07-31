@@ -67,6 +67,9 @@ interactiveDiagram dend labelMap mat simMat = graphicalUI' "birch-beer" $ do
             $ TS.spinButtonAt 72 "Maximum size of drawn node" 1
     drawNoScaleNodes' <-
         fmap DrawNoScaleNodesFlag $ TS.checkBox "Do not scale nodes"
+    drawLegendSep' <-
+        fmap DrawLegendSep
+            $ TS.spinButtonAt 1 "The amount of space between legend and tree" 1
     drawColors' <- fmap
                     (\ x
                     -> ( (\xs -> if null xs then Nothing else Just $ CustomColors xs)
@@ -98,6 +101,8 @@ interactiveDiagram dend labelMap mat simMat = graphicalUI' "birch-beer" $ do
                             , _birchDrawNodeNumber   = drawNodeNumber'
                             , _birchDrawMaxNodeSize  = drawMaxNodeSize'
                             , _birchDrawNoScaleNodes = drawNoScaleNodes'
+                            , _birchDrawLegendSep    = drawLegendSep'
+                            , _birchDrawLegendSubset = DrawLegendSubset False
                             , _birchDrawColors       = drawColors'
                             , _birchDend             = dend
                             , _birchMat              = mat

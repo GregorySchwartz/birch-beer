@@ -94,6 +94,12 @@ newtype IsLeaf = IsLeaf {unIsLeaf :: Bool} deriving (Eq, Ord, Read, Show)
 newtype DrawNoScaleNodesFlag = DrawNoScaleNodesFlag
     { unDrawNoScaleNodesFlag :: Bool
     } deriving (Read,Show)
+newtype DrawLegendSep = DrawLegendSep
+    { unDrawLegendSep :: Double
+    } deriving (Read,Show)
+newtype DrawLegendSubset = DrawLegendSubset
+    { unDrawLegendSubset :: Bool
+    } deriving (Read,Show)
 newtype LabelMap = LabelMap
     { unLabelMap :: Map Id Label
     } deriving (Read,Show)
@@ -146,11 +152,12 @@ data DrawNodeMark   = MarkModularity | MarkNone deriving (Read, Show)
 data Palette = Set1 | Hcl
 
 data DrawConfig = DrawConfig
-    { _drawLeaf :: DrawLeaf
-    , _drawCollection :: DrawCollection
-    , _drawNodeNumber :: DrawNodeNumber
-    , _drawMaxNodeSize :: DrawMaxNodeSize
+    { _drawLeaf             :: DrawLeaf
+    , _drawCollection       :: DrawCollection
+    , _drawNodeNumber       :: DrawNodeNumber
+    , _drawMaxNodeSize      :: DrawMaxNodeSize
     , _drawNoScaleNodesFlag :: DrawNoScaleNodesFlag
+    , _drawLegendSep        :: DrawLegendSep
     } deriving (Read,Show)
 
 data Config a b = Config
@@ -167,6 +174,8 @@ data Config a b = Config
     , _birchDrawNodeNumber   :: DrawNodeNumber
     , _birchDrawMaxNodeSize  :: DrawMaxNodeSize
     , _birchDrawNoScaleNodes :: DrawNoScaleNodesFlag
+    , _birchDrawLegendSubset :: DrawLegendSubset
+    , _birchDrawLegendSep    :: DrawLegendSep
     , _birchDrawColors       :: Maybe CustomColors
     , _birchDend             :: HC.Dendrogram (V.Vector a)
     , _birchMat              :: Maybe b

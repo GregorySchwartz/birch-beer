@@ -23,6 +23,7 @@ module BirchBeer.Utility
     , minMaxNorm
     , mad
     , median
+    , subsetLabelColorMap
     ) where
 
 -- Remote
@@ -31,10 +32,11 @@ import Control.Monad.State (MonadState (..), State (..), evalState, execState, m
 import Data.Function (on)
 import Data.Int (Int32)
 import Data.List (genericLength, maximumBy)
-import Data.Maybe (fromMaybe)
+import Data.Maybe (fromMaybe, catMaybes)
 import Data.Monoid ((<>))
 import qualified Control.Lens as L
 import qualified Data.Clustering.Hierarchical as HC
+import qualified Data.Foldable as F
 import qualified Data.Graph.Inductive as G
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
@@ -198,3 +200,19 @@ getGraphLeafItems (ClusterGraph gr) =
             . snd
             )
         . getGraphLeaves gr
+
+-- | Subset the LabelColorMap based on the present items.
+subsetLabelColorMap
+    :: (TreeItem a)
+    => ClusterGraph a -> LabelMap -> LabelColorMap -> LabelColorMap
+subsetLabelColorMap gr (LabelMap lm) =
+    LabelColorMap
+        . Map.filterWithKey (\k _ -> Set.member k validLabels)
+        . unLabelColorMap
+  where
+    validLabels = Set.fromList
+                . catMaybes
+                . fmap (flip Map.lookup lm . getId)
+                . F.toList
+                . getGraphLeafItems gr
+                $ 0
