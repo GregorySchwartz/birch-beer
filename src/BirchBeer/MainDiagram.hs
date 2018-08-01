@@ -69,7 +69,7 @@ mainDiagram config = do
         drawNodeNumber'   = _birchDrawNodeNumber config
         drawMaxNodeSize'  = _birchDrawMaxNodeSize config
         drawNoScaleNodes' = _birchDrawNoScaleNodes config
-        drawLegendSubset' = _birchDrawLegendSubset config
+        drawLegendAllLabels' = _birchDrawLegendAllLabels config
         drawLegendSep'    = _birchDrawLegendSep config
         drawColors'       = _birchDrawColors config
         order'            = fromMaybe (Order 1) $ _birchOrder config
@@ -168,9 +168,9 @@ mainDiagram config = do
                     return
                         . plotLabelLegend
                         . bool
-                              id
                               (subsetLabelColorMap gr lm)
-                              (unDrawLegendSubset drawLegendSubset')
+                              id
+                              (unDrawLegendAllLabels drawLegendAllLabels')
                         $ lcm
 
     -- | Get the entire diagram.

@@ -192,7 +192,7 @@ getItemColorMapContinuous customColors g mat
 
 -- | Get the labels of each item, where the label is determined by a binary high
 -- / low features determined by a threshold. Multiple features can be used
--- for combinatorical labeling.
+-- for combinatorical labeling, but only reports those present in the data set.
 getLabelMapThresholdContinuous
     :: (MatrixLike a)
     => [(Feature, Double)] -> a -> LabelMap
@@ -201,15 +201,15 @@ getLabelMapThresholdContinuous gs mat
     | otherwise = LabelMap
                 . Map.fromList
                 . zip (fmap Id . V.toList . getRowNames $ mat)
-                . getCombinatoricLabels
+                . getCutoffLabels
                 $ gs'
   where
-    getCombinatoricLabels :: [(Feature, Double)] -> [Label]
-    getCombinatoricLabels =
+    getCutoffLabels :: [(Feature, Double)] -> [Label]
+    getCutoffLabels =
         fmap (Label . List.foldl1' (\acc x -> acc <> " " <> x))
             . List.transpose
-            . fmap (uncurry getCombinatoricLabelFeature)
-    getCombinatoricLabelFeature g v =
+            . fmap (uncurry getCutoffLabelFeature)
+    getCutoffLabelFeature g v =
         fmap (\x -> unFeature g <> " " <> if x > v then "high" else "low")
             . S.toDenseListSV
             . flip S.extractCol (colErr g $ getCol g)

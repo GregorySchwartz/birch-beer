@@ -97,8 +97,8 @@ newtype DrawNoScaleNodesFlag = DrawNoScaleNodesFlag
 newtype DrawLegendSep = DrawLegendSep
     { unDrawLegendSep :: Double
     } deriving (Read,Show)
-newtype DrawLegendSubset = DrawLegendSubset
-    { unDrawLegendSubset :: Bool
+newtype DrawLegendAllLabels = DrawLegendAllLabels
+    { unDrawLegendAllLabels :: Bool
     } deriving (Read,Show)
 newtype LabelMap = LabelMap
     { unLabelMap :: Map Id Label
@@ -174,7 +174,7 @@ data Config a b = Config
     , _birchDrawNodeNumber   :: DrawNodeNumber
     , _birchDrawMaxNodeSize  :: DrawMaxNodeSize
     , _birchDrawNoScaleNodes :: DrawNoScaleNodesFlag
-    , _birchDrawLegendSubset :: DrawLegendSubset
+    , _birchDrawLegendAllLabels :: DrawLegendAllLabels
     , _birchDrawLegendSep    :: DrawLegendSep
     , _birchDrawColors       :: Maybe CustomColors
     , _birchDend             :: HC.Dendrogram (V.Vector a)
