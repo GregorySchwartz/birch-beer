@@ -82,6 +82,9 @@ interactiveDiagram dend labelMap mat simMat = graphicalUI' "birch-beer" $ do
                        )
                     )
                  $ TS.entryAt "[]" "Custom node colors [\"#e41a1c\", \"#377eb8\"]"
+    drawScaleSaturation' <-
+        fmap (Just . DrawScaleSaturation)
+            $ TS.spinButtonAt 1 "Saturate colors in the HSV model." 1
 
     return $
         let drawLeaf' = case drawLeafTemp of
@@ -104,6 +107,7 @@ interactiveDiagram dend labelMap mat simMat = graphicalUI' "birch-beer" $ do
                             , _birchDrawLegendSep    = drawLegendSep'
                             , _birchDrawLegendAllLabels = DrawLegendAllLabels False
                             , _birchDrawColors       = drawColors'
+                            , _birchDrawScaleSaturation = drawScaleSaturation'
                             , _birchDend             = dend
                             , _birchMat              = mat
                             , _birchSimMat           = simMat

@@ -62,6 +62,7 @@ data Options = Options
     , drawLegendSep :: Maybe Double <?> "([1] | DOUBLE) The amount of space between the legend and the tree."
     , drawLegendAllLabels :: Bool <?> "Whether to show all the labels in the label file instead of only showing labels within the current tree. The program generates colors from all labels in the label file first in order to keep consistent colors. By default, this value is false, meaning that only the labels present in the tree are shown (even though the colors are the same). The subset process occurs after --draw-colors, so when using that argument make sure to account for all labels."
     , drawColors :: Maybe String <?> "([Nothing] | COLORS) Custom colors for the labels or continuous features. Will repeat if more labels than provided colors. For continuous feature plots, uses first two colors [high, low], defaults to [red, white]. For instance: --draw-colors \"[\\\"#e41a1c\\\", \\\"#377eb8\\\"]\""
+    , drawScaleSaturation :: Maybe Double <?> "([Nothing] | DOUBLE) Multiply the saturation value all nodes by this number in the HSV model. Useful for seeing more visibly the continuous colors by making the colors deeper against a gray scale."
     , interactive :: Bool <?> "Display interactive tree."
     } deriving (Generic)
 
@@ -81,7 +82,8 @@ modifiers = lispCaseModifiers { shortNameModifier = short }
     short "drawNoScaleNodes"     = Just 'W'
     short "drawMaxNodeSize"      = Just 'A'
     short "drawLegendSep"        = Just 'Q'
-    short "drawLegendAllLabels"     = Just 'J'
+    short "drawLegendAllLabels"  = Just 'J'
+    short "drawScaleSaturation"  = Just 'V'
     short "order"                = Just 'O'
     short "interactive"          = Just 'I'
     short x                      = firstLetter x
@@ -144,6 +146,8 @@ main = do
                           . unHelpful
                           . drawColors
                           $ opts
+        drawScaleSaturation' =
+            fmap DrawScaleSaturation . unHelpful . drawScaleSaturation $ opts
         output'           =
             fromMaybe "dendrogram.svg" . unHelpful . output $ opts
 
@@ -201,6 +205,7 @@ main = do
                         , _birchDrawLegendSep    = drawLegendSep'
                         , _birchDrawLegendAllLabels = drawLegendAllLabels'
                         , _birchDrawColors       = drawColors'
+                        , _birchDrawScaleSaturation = drawScaleSaturation'
                         , _birchDend             = dend
                         , _birchMat              = Nothing
                         , _birchSimMat           = simMat

@@ -258,8 +258,13 @@ plotLabelLegend = flip (drawLegend emptyBox) legendOpts
 
 -- | Get the legend for a feature. Bar from
 -- https://archives.haskell.org/projects.haskell.org/diagrams/blog/2013-12-03-Palette1.html
-plotContinuousLegend :: (MatrixLike a) => Feature -> a -> Diagram B
-plotContinuousLegend g mat
+plotContinuousLegend :: (MatrixLike a)
+                     => Maybe CustomColors
+                     -> DrawScaleSaturation
+                     -> Feature
+                     -> a
+                     -> Diagram B
+plotContinuousLegend customColors sat g mat
     | isNothing col = mempty
     | otherwise = rotateBy (3 / 4)
                 $ renderColourBar
@@ -269,8 +274,10 @@ plotContinuousLegend g mat
     cbOpts = over tickLabelStyle (font "Arial")
            . set visible True
            $ defColourBar
-    cm =
-        colourMap . zip [1..] . fmap (\x -> sRGB 1 (1 - x) (1 - x)) $ [0,0.1..1]
+    cm = colourMap
+       . zip [1..]
+       . fmap (\x -> saturateColor sat $ blend x highColor lowColor)
+       $ [0,0.1..1]
     (minVal, maxVal) = Fold.fold ((,) <$> Fold.minimum <*> Fold.maximum)
                      . flip S.extractCol (colErr col)
                      . getMatrix
@@ -280,11 +287,16 @@ plotContinuousLegend g mat
         . fmap Feature
         . getColNames
         $ mat
+    (highColor, lowColor) = getHighLowColors customColors
 
 -- | Get the legend for the sum of all features. Bar from
 -- https://archives.haskell.org/projects.haskell.org/diagrams/blog/2013-12-03-Palette1.html
-plotSumContinuousLegend :: (MatrixLike a) => a -> Diagram B
-plotSumContinuousLegend mat =
+plotSumContinuousLegend :: (MatrixLike a)
+                        => Maybe CustomColors
+                        -> DrawScaleSaturation
+                        -> a
+                        -> Diagram B
+plotSumContinuousLegend customColors sat mat =
     rotateBy (3 / 4)
         $ renderColourBar cbOpts cm (fromMaybe 0 minVal, fromMaybe 0 maxVal) 100
   where
@@ -292,13 +304,16 @@ plotSumContinuousLegend mat =
     cbOpts = over tickLabelStyle (font "Arial")
            . set visible True
            $ defColourBar
-    cm =
-        colourMap . zip [1..] . fmap (\x -> sRGB 1 (1 - x) (1 - x)) $ [0,0.1..1]
+    cm = colourMap
+       . zip [1..]
+       . fmap (\x -> saturateColor sat $ blend x highColor lowColor)
+       $ [0,0.1..1]
     (minVal, maxVal) = Fold.fold ((,) <$> Fold.minimum <*> Fold.maximum)
                      . fmap sum
                      . S.toRowsL
                      . getMatrix
                      $ mat
+    (highColor, lowColor) = getHighLowColors customColors
 
 -- | Get the maximum cluster size from a graph.
 maxClusterSize :: G.Gr (G.Node, Maybe (Seq.Seq a)) e -> Int

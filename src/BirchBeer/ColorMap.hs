@@ -22,12 +22,15 @@ module BirchBeer.ColorMap
     , getNodeColorMapFromDiversity
     , getGraphColor
     , getNodeColor
+    , saturateColor
+    , saturateNodeColorMap
     ) where
 
 -- Remote
 import Control.Monad (join)
 import Data.Colour (AffineSpace (..), withOpacity, blend)
 import Data.Colour.Names (black)
+import Data.Colour.RGBSpace.HSV (hsv, hsvView)
 import Data.Function (on)
 import Data.Int (Int32)
 import Data.Maybe (fromMaybe, isNothing)
@@ -150,7 +153,7 @@ labelToItemColorMap :: LabelColorMap -> LabelMap -> ItemColorMap
 labelToItemColorMap (LabelColorMap lm) =
     ItemColorMap . Map.map (\x -> Map.findWithDefault black x lm) . unLabelMap
 
--- | Get the colors from a list of expressions from two colors.
+-- | Get the colors from a list of feature values from two colors.
 getContinuousColor
     :: Colour.Colour Double
     -> Colour.Colour Double
@@ -187,8 +190,7 @@ getItemColorMapContinuous customColors g mat
         . fmap Feature
         . getColNames
         $ mat
-    highColor = fromMaybe red $ customColors >>= flip atMay 0 . unCustomColors
-    lowColor  = fromMaybe white $ customColors >>= flip atMay 1 . unCustomColors
+    (highColor, lowColor) = getHighLowColors customColors
 
 -- | Get the labels of each item, where the label is determined by a binary high
 -- / low features determined by a threshold. Multiple features can be used
@@ -235,8 +237,7 @@ getItemColorMapSumContinuous customColors mat =
         . getMatrix
         $ mat
   where
-    highColor = fromMaybe red $ customColors >>= flip atMay 0 . unCustomColors
-    lowColor  = fromMaybe white $ customColors >>= flip atMay 1 . unCustomColors
+    (highColor, lowColor) = getHighLowColors customColors
 
 -- | Use the outgoing edges of a node to define the mark around the node.
 -- Min max normalization.
@@ -287,8 +288,7 @@ getNodeColorMapFromDiversity customColors (Order order) gr cm =
     innerColors  = colors innerNodes
     colors xs    = getContinuousColor highColor lowColor
                  $ fmap (diversity order . F.toList . getGraphLeafItems gr) xs
-    highColor    = fromMaybe red $ customColors >>= flip atMay 0 . unCustomColors
-    lowColor     = fromMaybe white $ customColors >>= flip atMay 1 . unCustomColors
+    (highColor, lowColor) = getHighLowColors customColors
 
 -- | Get the color of a node, defaulting to black.
 getNodeColor :: Maybe NodeColorMap -> G.Node -> Colour Double
@@ -320,3 +320,16 @@ getEachFractionColorList (Just (ItemColorMap cm)) =
     fmap swap
         . getFractions
         . fmap (flip (Map.findWithDefault black) cm . getId)
+
+-- | Saturate a color by multiplying the saturation in the HSV model by a specified
+-- amount.
+saturateColor :: DrawScaleSaturation -> Colour Double -> Colour Double
+saturateColor (DrawScaleSaturation x) = (\(RGB r g b) -> sRGB r g b)
+                                     . (\(h, s, v) -> hsv h (s * x) v)
+                                     . hsvView
+                                     . toSRGB
+
+-- | Saturate the node color map by multiplying the saturation in the HSV model
+-- by a specified amount.
+saturateNodeColorMap :: DrawScaleSaturation -> NodeColorMap -> NodeColorMap
+saturateNodeColorMap x = NodeColorMap . fmap (saturateColor x) . unNodeColorMap

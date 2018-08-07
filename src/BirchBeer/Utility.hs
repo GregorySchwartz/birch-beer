@@ -24,6 +24,7 @@ module BirchBeer.Utility
     , mad
     , median
     , subsetLabelColorMap
+    , getHighLowColors
     ) where
 
 -- Remote
@@ -34,6 +35,7 @@ import Data.Int (Int32)
 import Data.List (genericLength, maximumBy)
 import Data.Maybe (fromMaybe, catMaybes)
 import Data.Monoid ((<>))
+import Safe (atMay)
 import qualified Control.Lens as L
 import qualified Data.Clustering.Hierarchical as HC
 import qualified Data.Foldable as F
@@ -43,6 +45,7 @@ import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as T
 import qualified Data.Vector as V
+import qualified Diagrams.Prelude as D
 import qualified Statistics.Quantile as S
 
 -- Local
@@ -216,3 +219,11 @@ subsetLabelColorMap gr (LabelMap lm) =
                 . F.toList
                 . getGraphLeafItems gr
                 $ 0
+
+-- | Get the high and low colors for a continuous color map.
+getHighLowColors :: Maybe CustomColors -> (D.Colour Double, D.Colour Double)
+getHighLowColors customColors = (highColor, lowColor)
+  where
+    highColor = fromMaybe D.red $ customColors >>= flip atMay 0 . unCustomColors
+    lowColor  = fromMaybe (D.blend 0.2 D.black D.white)
+              $ customColors >>= flip atMay 1 . unCustomColors

@@ -72,6 +72,7 @@ mainDiagram config = do
         drawLegendAllLabels' = _birchDrawLegendAllLabels config
         drawLegendSep'    = _birchDrawLegendSep config
         drawColors'       = _birchDrawColors config
+        drawScaleSaturation' = _birchDrawScaleSaturation config
         order'            = fromMaybe (Order 1) $ _birchOrder config
         mat               = return $ _birchMat config
         simMat            = _birchSimMat config
@@ -123,6 +124,7 @@ mainDiagram config = do
 
     -- | Get the node color map.
     let nodeColorMap =
+          fmap (maybe id saturateNodeColorMap drawScaleSaturation') $
             case drawLeaf' of
                 (DrawItem DrawDiversity) ->
                     fmap
@@ -157,10 +159,22 @@ mainDiagram config = do
     legend <- case drawLeaf' of
                 (DrawItem (DrawContinuous x)) ->
                     fmap
-                        (fmap (plotContinuousLegend (Feature x)))
+                        ( fmap ( plotContinuousLegend
+                                  drawColors'
+                                  (fromMaybe (DrawScaleSaturation 1) drawScaleSaturation')
+                                  (Feature x)
+                               )
+                        )
                         mat
                 (DrawItem DrawSumContinuous) ->
-                    fmap (fmap plotSumContinuousLegend) mat
+                    fmap
+                      ( fmap
+                          ( plotSumContinuousLegend
+                            drawColors'
+                            (fromMaybe (DrawScaleSaturation 1) drawScaleSaturation')
+                          )
+                      )
+                      mat
                 (DrawItem DrawDiversity) -> return mempty
                 _ -> return $ do
                     lm <- labelMap'

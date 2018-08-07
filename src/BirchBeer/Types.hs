@@ -115,6 +115,9 @@ newtype MarkColorMap = MarkColorMap
 newtype NodeColorMap = NodeColorMap
     { unNodeColorMap :: Map G.Node Kolor
     } deriving (Read,Show)
+newtype DrawScaleSaturation = DrawScaleSaturation
+    { unDrawScaleSaturation :: Double
+    } deriving (Read,Show)
 newtype ClusterGraph a = ClusterGraph
     { unClusterGraph :: G.Gr (G.Node, Maybe (Seq.Seq a)) Double
     } deriving (Read, Show)
@@ -177,6 +180,7 @@ data Config a b = Config
     , _birchDrawLegendAllLabels :: DrawLegendAllLabels
     , _birchDrawLegendSep    :: DrawLegendSep
     , _birchDrawColors       :: Maybe CustomColors
+    , _birchDrawScaleSaturation :: Maybe DrawScaleSaturation
     , _birchDend             :: HC.Dendrogram (V.Vector a)
     , _birchMat              :: Maybe b
     , _birchSimMat           :: Maybe (SimMatrix b)
