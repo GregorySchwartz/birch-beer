@@ -24,13 +24,17 @@ module BirchBeer.ColorMap
     , getNodeColor
     , saturateColor
     , saturateNodeColorMap
+    , saturateItemColorMap
+    , saturateLabelColorMap
     ) where
 
 -- Remote
 import Control.Monad (join)
+import Data.Bool (bool)
 import Data.Colour (AffineSpace (..), withOpacity, blend)
 import Data.Colour.Names (black)
 import Data.Colour.RGBSpace.HSV (hsv, hsvView)
+import Data.Colour.Palette.ColorSet (rybColor)
 import Data.Function (on)
 import Data.Int (Int32)
 import Data.Maybe (fromMaybe, isNothing)
@@ -112,7 +116,21 @@ getLabelColorMap Set1 (LabelMap lm) =
   where
     colors = interpColors (Set.size labels) $ Brewer.brewerSet Brewer.Set1 9
     labels = Set.fromList . Map.elems $ lm
-getLabelColorMap _ _ = error "Only the Set1 palette is supported now."
+getLabelColorMap Ryb (LabelMap lm) =
+    LabelColorMap . Map.fromList . flip zip colors . Set.toAscList $ labels
+  where
+    colors = interpColors (Set.size labels) . fmap rybColor $ [0, skipNum .. 23]
+    skipNum = if (Set.size labels >= 24) then 1 else div 24 $ Set.size labels
+    labels = Set.fromList . Map.elems $ lm
+getLabelColorMap Hsv (LabelMap lm) =
+    LabelColorMap . Map.fromList . flip zip colors . Set.toAscList $ labels
+  where
+    colors = fmap
+              (\x -> (\(RGB r g b) -> sRGB r g b) $ hsv x 1 1)
+              [0, skipNum .. 360]
+    skipNum = 360 / (fromIntegral $ Set.size labels)
+    labels = Set.fromList . Map.elems $ lm
+getLabelColorMap _ _ = error "Color palette not supported."
 
 -- | Interpolate n colors from a list of colors using linear piecewise
 -- interpolation. Inspired by ertes-w.
@@ -325,11 +343,23 @@ getEachFractionColorList (Just (ItemColorMap cm)) =
 -- amount.
 saturateColor :: DrawScaleSaturation -> Colour Double -> Colour Double
 saturateColor (DrawScaleSaturation x) = (\(RGB r g b) -> sRGB r g b)
-                                     . (\(h, s, v) -> hsv h (s * x) v)
+                                     . (\(h, s, v) -> hsv h (clamp 1 $ s * x) v)
                                      . hsvView
                                      . toSRGB
+  where
+    clamp n x = bool x n (x > n)
 
 -- | Saturate the node color map by multiplying the saturation in the HSV model
 -- by a specified amount.
 saturateNodeColorMap :: DrawScaleSaturation -> NodeColorMap -> NodeColorMap
 saturateNodeColorMap x = NodeColorMap . fmap (saturateColor x) . unNodeColorMap
+
+-- | Saturate the item color map by multiplying the saturation in the HSV model
+-- by a specified amount.
+saturateItemColorMap :: DrawScaleSaturation -> ItemColorMap -> ItemColorMap
+saturateItemColorMap x = ItemColorMap . fmap (saturateColor x) . unItemColorMap
+
+-- | Saturate the label color map by multiplying the saturation in the HSV model
+-- by a specified amount.
+saturateLabelColorMap :: DrawScaleSaturation -> LabelColorMap -> LabelColorMap
+saturateLabelColorMap x = LabelColorMap . fmap (saturateColor x) . unLabelColorMap

@@ -71,6 +71,7 @@ mainDiagram config = do
         drawNoScaleNodes' = _birchDrawNoScaleNodes config
         drawLegendAllLabels' = _birchDrawLegendAllLabels config
         drawLegendSep'    = _birchDrawLegendSep config
+        drawPalette'      = _birchDrawPalette config
         drawColors'       = _birchDrawColors config
         drawScaleSaturation' = _birchDrawScaleSaturation config
         order'            = fromMaybe (Order 1) $ _birchOrder config
@@ -97,22 +98,25 @@ mainDiagram config = do
                                 drawLegendSep'
 
     -- Get the color of each label.
-    let labelColorMap =
+    let labelColorMapRaw =
             case drawColors' of
-                Nothing   -> fmap (getLabelColorMap Set1) labelMap'
+                Nothing   -> fmap (getLabelColorMap drawPalette') labelMap'
                 (Just cs) -> fmap (getLabelCustomColorMap cs) labelMap'
+        labelColorMap = fmap
+                          (maybe id saturateLabelColorMap drawScaleSaturation')
+                          labelColorMapRaw
         -- | Get the mark color map.
         markColorMap = case drawMark' of
                         MarkModularity -> Just $ getMarkColorMap gr
                         _ -> Nothing
         defaultGetItemColorMap :: Maybe ItemColorMap
         defaultGetItemColorMap = do
-            lcm <- labelColorMap
+            lcm <- labelColorMapRaw
             lm  <- labelMap'
             return $ labelToItemColorMap lcm lm
 
     -- | Get the item color map.
-    itemColorMap <-
+    itemColorMapRaw <-
         case drawLeaf' of
             DrawItem (DrawContinuous x) ->
                 fmap
@@ -123,14 +127,17 @@ mainDiagram config = do
             _                           -> return defaultGetItemColorMap
 
     -- | Get the node color map.
-    let nodeColorMap =
+    let itemColorMap = fmap
+                        (maybe id saturateItemColorMap drawScaleSaturation')
+                        itemColorMapRaw
+        nodeColorMap =
           fmap (maybe id saturateNodeColorMap drawScaleSaturation') $
             case drawLeaf' of
                 (DrawItem DrawDiversity) ->
                     fmap
                         (getNodeColorMapFromDiversity drawColors' order' gr)
-                        itemColorMap
-                _ -> fmap (getNodeColorMapFromItems gr) $ itemColorMap
+                        itemColorMapRaw
+                _ -> fmap (getNodeColorMapFromItems gr) $ itemColorMapRaw
     -- | Get the graph at each leaf (if applicable).
         getAllLeafNodesSet = Set.fromList
                            . F.toList

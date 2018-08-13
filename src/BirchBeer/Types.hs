@@ -152,7 +152,7 @@ data DrawLeaf       = DrawItem DrawItemType | DrawText deriving (Read, Show)
 data DrawCollection = CollectionGraph Double Double [Int] | PieRing | PieChart | PieNone deriving (Read, Show)
 data DrawNodeMark   = MarkModularity | MarkNone deriving (Read, Show)
 
-data Palette = Set1 | Hcl
+data Palette = Set1 | Ryb | Hsv | Hcl deriving (Read, Show)
 
 data DrawConfig = DrawConfig
     { _drawLeaf             :: DrawLeaf
@@ -179,6 +179,7 @@ data Config a b = Config
     , _birchDrawNoScaleNodes :: DrawNoScaleNodesFlag
     , _birchDrawLegendAllLabels :: DrawLegendAllLabels
     , _birchDrawLegendSep    :: DrawLegendSep
+    , _birchDrawPalette      :: Palette
     , _birchDrawColors       :: Maybe CustomColors
     , _birchDrawScaleSaturation :: Maybe DrawScaleSaturation
     , _birchDend             :: HC.Dendrogram (V.Vector a)

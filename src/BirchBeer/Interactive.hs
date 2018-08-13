@@ -61,6 +61,7 @@ interactiveDiagram dend labelMap mat simMat = graphicalUI' "birch-beer" $ do
     drawCollection' <-
         TS.radioButton "Leaf shape" PieChart [PieRing, PieNone, CollectionGraph 1 0 []]
     drawMark' <- TS.radioButton "Node mark" MarkNone [MarkModularity]
+    drawPalette' <- TS.radioButton "Palette" Set1 [Hsv, Ryb]
     drawNodeNumber' <- fmap DrawNodeNumber $ TS.checkBox "Show node number"
     drawMaxNodeSize' <-
         fmap DrawMaxNodeSize
@@ -84,7 +85,7 @@ interactiveDiagram dend labelMap mat simMat = graphicalUI' "birch-beer" $ do
                  $ TS.entryAt "[]" "Custom node colors [\"#e41a1c\", \"#377eb8\"]"
     drawScaleSaturation' <-
         fmap (Just . DrawScaleSaturation)
-            $ TS.spinButtonAt 1 "Saturate colors in the HSV model." 1
+            $ TS.spinButtonAt 1 "Saturate colors in the HSV model" 1
 
     return $
         let drawLeaf' = case drawLeafTemp of
@@ -106,6 +107,7 @@ interactiveDiagram dend labelMap mat simMat = graphicalUI' "birch-beer" $ do
                             , _birchDrawNoScaleNodes = drawNoScaleNodes'
                             , _birchDrawLegendSep    = drawLegendSep'
                             , _birchDrawLegendAllLabels = DrawLegendAllLabels False
+                            , _birchDrawPalette      = drawPalette'
                             , _birchDrawColors       = drawColors'
                             , _birchDrawScaleSaturation = drawScaleSaturation'
                             , _birchDend             = dend
