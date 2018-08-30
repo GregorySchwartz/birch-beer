@@ -198,11 +198,7 @@ median p = S.continuousBy p 1 2
 -- | Get the collection of items in a leaf.
 getGraphLeafItems :: ClusterGraph a -> G.Node -> Seq.Seq a
 getGraphLeafItems (ClusterGraph gr) =
-    join
-        . fmap ( fromMaybe (error "No items in leaf.")
-            . snd
-            )
-        . getGraphLeaves gr
+    join . fmap (fromMaybe mempty . snd) . getGraphLeaves gr
 
 -- | Subset the LabelColorMap based on the present items.
 subsetLabelColorMap
