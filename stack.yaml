@@ -62,7 +62,7 @@ extra-deps:
 - gio-0.13.4.1
 - graphviz-2999.20.0.2
 - gtk-0.14.7
-- hmatrix-svdlibc-0.5.0
+- hmatrix-svdlibc-0.5.0.1
 - mfsolve-0.3.2.0
 - pipes-text-0.0.2.5
 - plots-0.1.0.2

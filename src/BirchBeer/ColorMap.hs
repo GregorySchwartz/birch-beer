@@ -154,7 +154,6 @@ getLabelColorMap9 (LabelMap lm) =
   where
     labels = Set.toAscList . Set.fromList . Map.elems $ lm
 
-
 -- | Get the colors of each label using custom colors.
 getLabelCustomColorMap :: CustomColors -> LabelMap -> LabelColorMap
 getLabelCustomColorMap (CustomColors cs) (LabelMap lm) =

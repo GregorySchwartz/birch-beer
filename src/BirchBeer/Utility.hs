@@ -129,7 +129,7 @@ getGraphLeaves :: G.Graph gr => gr a b -> G.Node -> Seq.Seq a
 getGraphLeaves gr n =
     case G.suc gr n of
         [] -> Seq.singleton
-            . fromMaybe (error "Node has no label.")
+            . fromMaybe (error "Node is missing or has no label (are you using the right tree?).")
             . G.lab gr
             $ n
         xs -> mconcat . fmap (getGraphLeaves gr) $ xs
