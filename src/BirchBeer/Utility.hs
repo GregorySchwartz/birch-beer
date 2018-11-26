@@ -12,7 +12,10 @@ module BirchBeer.Utility
     , getFractions
     , isTo
     , branchToLeaf
-    , lengthElements
+    , branchToLeafDend
+    , lengthElementsDend
+    , lengthElementsTree
+    , isLeaf
     , absLog2
     , dendrogramToGraph
     , getGraphLeaves
@@ -35,6 +38,7 @@ import Data.Int (Int32)
 import Data.List (genericLength, maximumBy)
 import Data.Maybe (fromMaybe, catMaybes)
 import Data.Monoid ((<>))
+import Data.Tree (Tree (..), flatten)
 import Safe (atMay)
 import qualified Control.Lens as L
 import qualified Data.Clustering.Hierarchical as HC
@@ -71,21 +75,47 @@ getFractions xs = Map.toAscList . Map.map (/ total) $ countMap
 isTo :: Double -> Double -> Double -> Double
 isTo x y a = a / (x / y)
 
--- | Convert a branch or leaf to a leaf.
-branchToLeaf :: (Monoid a) => HC.Dendrogram a -> HC.Dendrogram a
-branchToLeaf (HC.Leaf x) = HC.Leaf x
-branchToLeaf (HC.Branch d l r)  =
+-- | Convert a branch or leaf to a leaf of a dendrogram.
+branchToLeafDend :: (Monoid a) => HC.Dendrogram a -> HC.Dendrogram a
+branchToLeafDend (HC.Leaf x) = HC.Leaf x
+branchToLeafDend (HC.Branch d l r)  =
     HC.Leaf . mconcat $ HC.elements l <> HC.elements r
+
+-- | Convert a branch or leaf to a leaf.
+branchToLeaf :: (Monoid a) => Tree a -> Tree a
+branchToLeaf b@(Tree { subForest = [] }) = b
+branchToLeaf b@(Tree { subForest = xs }) =
+  b { subForest = concatMap flatten xs }
+
+-- | Check if a Tree is a leaf.
+isLeaf :: Tree a -> Bool
+isLeaf (Tree { subForest = [] }) = True
+isLeaf _                         = False
 
 -- | Log 2 absolute transformation.
 absLog2 :: Double -> Double
 absLog2 = abs . logBase 2
 
 -- | Get the generic length of the elements of the dendrogram.
-lengthElements
+lengthElementsDend
     :: (Monoid (t a), Traversable t, Num b)
     => HC.Dendrogram (t a) -> b
-lengthElements = fromIntegral . sum . fmap length . HC.elements
+lengthElementsDend = fromIntegral . sum . fmap length . HC.elements
+
+-- | Get the generic length of the elements of the tree.
+lengthElementsTree :: (TreeNode a, Num b) => Tree a -> b
+lengthElementsTree = fromIntegral . sum . fmap length . flatten
+                   
+-- | Convert a dendrogram to a tree.
+dendToTree :: HC.Dendrogram a -> Tree (TreeNode a)
+dendToTree (HC.Leaf x) =
+  Tree { rootLabel = TreeNode { _modularity = Nothing, _item = Just x}
+       , subForest = []
+       }
+dendToTree (HC.Branch d l r)  =
+  Tree { rootLabel = TreeNode { _modularity = Just d, _item = Nothing }
+       , subForest = [dendToTree l, dendToTree r]
+       }
 
 -- | Convert a dendrogram with height as Q values to a graph for
 -- plotting with leaves containing all information. This also means that the
@@ -121,6 +151,40 @@ dendrogramToGraph =
         (n, gr) <- get
 
         modify (L.over L._1 (+ 1) . L.over L._2 (G.insNode (n, (n, Just . Seq.fromList . V.toList $ items))))
+
+        return n
+
+-- | Convert a tree with height as Q values to a graph for
+-- plotting with leaves containing all information. This also means that the
+-- node must be in the label as well.
+treeToGraph :: (TreeItem a) => Tree (TreeNode a) -> ClusterGraph a
+treeToGraph =
+    ClusterGraph
+        . snd
+        . flip execState (0, G.empty)
+        . go
+  where
+    go :: (TreeItem a)
+       => Tree (TreeNode a)
+       -> State (Int, G.Gr (G.Node, Maybe (Seq.Seq a)) Double) Int
+    go (Tree { rootLabel = TreeNode { _item = items }, subForest = [] }) = do
+        (n, gr) <- get
+
+        modify (L.over L._1 (+ 1) . L.over L._2 (G.insNode (n, (n, Just . Seq.fromList . V.toList $ items))))
+
+        return n
+    go (Tree { rootLabel = TreeNode { modularity = d, _item = items }, subForest = children }) = do
+        (n, gr) <- get
+        modify (L.over L._1 (+ 1))
+
+        children <- fmap go children
+
+        let setGr a = foldl'
+                        (\acc x -> G.insEdge (n, x, d) acc)
+                        (G.insNode (n, (n, Nothing)) a)
+                        children
+
+        modify (L.over L._2 setGr)
 
         return n
 

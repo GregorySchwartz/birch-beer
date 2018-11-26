@@ -193,6 +193,11 @@ data NamedMatrix = NamedMatrix
     , _namedCols :: V.Vector T.Text
     }
 
+data TreeNode a = TreeNode
+    { _modularity :: Maybe Double
+    , _item :: Maybe a
+    }
+
 class TreeItem a where
     getId :: a -> Id
 
@@ -222,3 +227,11 @@ deriving instance (Eq a, Ord a, Fractional a) => Ord (RGB a)
 
 instance (Eq a, Ord a, Fractional a) => Ord (Colour a) where
     compare x y = toRGB y `compare` toRGB x
+
+instance (TreeItem a) => Semigroup (TreeNode a) where
+  (<>) x y  = TreeNode { _modularity = view modularity x
+                       , _item = (<>) (view item x) (view item y)
+                       }
+
+instance (TreeItem a) => Monoid (TreeNode a) where
+  mempty = TreeNode { _modularity = Nothing, _item = mempty }
