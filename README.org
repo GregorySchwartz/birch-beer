@@ -81,7 +81,7 @@ The input tree format should be a =json= file with a recursive structure. An
 object is represented by
 =[{"_distance": DOUBLE, "_item": [STRING]}, [SUBFOREST]]=, where ="_distance"=
 and ="_item"= are optional, usually, having ="_distance"= for inner nodes and
-="_item"= for leaves. For example:
+="_item"= for leaves. Supports rose trees as well! For example:
 
 #+BEGIN_EXAMPLE
 [{"_distance": 0.8}, [[{"_item": ["1", "2"]}, [[{"_item": ["3", "4", "5"]}, []], [{"_item": ["6", "7"]}, []]]], [{"_item": ["8", "9", "10", "11"]}, []]]]
