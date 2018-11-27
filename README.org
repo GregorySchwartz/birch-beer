@@ -1,0 +1,137 @@
+#+TITLE: birch-beer
+#+AUTHOR: Gregory W. Schwartz
+#+OPTIONS: date:nil creator:nil timestamp:nil toc:t
+
+#+HTML_HEAD: <link rel="stylesheet" type="text/css" href="http://www.pirilampo.org/styles/readtheorg/css/htmlize.css"/>
+#+HTML_HEAD: <link rel="stylesheet" type="text/css" href="http://www.pirilampo.org/styles/readtheorg/css/readtheorg.css"/>
+
+#+HTML_HEAD: <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+#+HTML_HEAD: <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
+#+HTML_HEAD: <script type="text/javascript" src="http://www.pirilampo.org/styles/lib/js/jquery.stickytableheaders.js"></script>
+#+HTML_HEAD: <script type="text/javascript" src="http://www.pirilampo.org/styles/readtheorg/js/readtheorg.js"></script>
+
+* Description
+
+[[file:img/piechart_pruned_tree.png]]
+
+=birch-beer= is all about sweet trees. That is, visualizing hierarchical
+structures where the elements are stored in leaves and parent nodes represent
+all of the descendant leaves. Using branch scaling, weighted average color
+blending, distance markers, and more, we can all create some home brewed
+=birch-beer= together!
+
+* Installation
+
+** Dependencies
+
+You may require the following dependencies to build and run (from Ubuntu 16.04,
+use the appropriate packages from your distribution of choice):
+
+- build-essential
+- libgmp-dev
+- libblas-dev
+- liblapack-dev
+- libgsl-dev
+- libgtk2.0-dev
+- libcairo2-dev
+- libpango1.0-dev
+- graphviz
+
+** Install =stack=
+
+See [[https://docs.haskellstack.org/en/stable/README/]] for more details.
+
+#+BEGIN_SRC sh
+curl -sSL https://get.haskellstack.org/ | sh
+stack setup
+#+END_SRC
+
+** Install =birch-beer=
+
+*** Online
+
+We only require =stack= (or =cabal=), you do not need to download any source
+code, just run the following command to place =birch-beer= in your
+=~/.local/bin/=:
+
+#+BEGIN_SRC sh
+stack install birch-beer
+#+END_SRC
+
+*** Source
+
+#+BEGIN_SRC sh
+stack install
+#+END_SRC
+
+* Usage
+
+*For a more detailed look at many of the features*, check out the
+=too-many-cells= [[https://github.com/GregorySchwartz/too-many-cells][README]] about =make-tree=, which uses =birch-beer= to plot
+single cell clades with examples. At any point, use =birch-beer -h= to see the
+help. The general usage would be:
+
+#+BEGIN_SRC sh
+birch-beer --input tree.json --labels-file labels.csv
+#+END_SRC
+
+** Tree format
+
+The input tree format should be a =json= file with a recursive structure. An
+object is represented by
+=[{"_distance": DOUBLE, "_item": [STRING]}, [SUBFOREST]]=, where ="_distance"=
+and ="_item"= are optional, usually, having ="_distance"= for inner nodes and
+="_item"= for leaves. For example:
+
+#+BEGIN_EXAMPLE
+[{"_distance": 0.8}, [[{"_item": ["1", "2"]}, [[{"_item": ["3", "4", "5"]}, []], [{"_item": ["6", "7"]}, []]]], [{"_item": ["8", "9", "10", "11"]}, []]]]
+#+END_EXAMPLE
+
+** Labels format
+
+To assign labels (and thus colors) to the elements within the tree, make a =csv=
+file with an =item,label= format. Both columns are treated as strings, so
+anything can be used as long as the =item= column matches the item strings in
+the tree. For example to go with the above tree:
+
+#+CAPTION: labels.csv
+#+BEGIN_EXAMPLE
+item,label
+1,1
+2,1
+3,2
+4,2
+5,2
+6,3
+7,1
+8,1
+9,3
+10,3
+11,2
+#+END_EXAMPLE
+
+* Select examples
+
+** Large tree
+
+[[file:img/complete_default_tree.png]]
+
+** Number overlay
+
+[[file:img/numbered_pruned_tree.png]]
+
+** Distance overlay
+
+[[file:img/modularity_pruned_tree.png]]
+
+** Continuous color saturation
+
+[[file:img/cd4_saturated_10_dendrogram.png]]
+
+** Continuous multi-color saturation
+
+[[file:img/cd4_cd8_sat_10_dendrogram.png]]
+
+** Diversity of labels
+
+[[file:img/diversity_pruned_tree.png]]
