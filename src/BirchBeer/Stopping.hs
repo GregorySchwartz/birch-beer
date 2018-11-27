@@ -70,8 +70,8 @@ sizeCutDendrogram
     :: (Monoid (t a), Traversable t)
     => Int -> HC.Dendrogram (t a) -> HC.Dendrogram (t a)
 sizeCutDendrogram _ b@(HC.Leaf x) = branchToLeafDend b
-sizeCutDendrogram n b@(HC.Branch d l@(HC.Leaf ls) r@(HC.Leaf rs)) =
-    if length ls < n || length rs < n
+sizeCutDendrogram n b@(HC.Branch d l r) =
+    if getSizeDend l < n || getSizeDend r < n
         then branchToLeafDend b
         else HC.Branch d (sizeCutDendrogram n l) (sizeCutDendrogram n r)
 
@@ -81,7 +81,7 @@ sizeCut
     => Int -> Tree (TreeNode (t a)) -> Tree (TreeNode (t a))
 sizeCut _ b@(Node { subForest = [] }) = branchToLeaf b
 sizeCut n b@(Node { subForest = xs }) =
-    if any ((< n) . length . L.view item . rootLabel) xs
+    if any ((< n) . getSize) xs
         then branchToLeaf b
         else b { subForest = fmap (sizeCut n) xs }
 
