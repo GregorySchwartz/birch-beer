@@ -34,7 +34,7 @@ import Data.Int (Int32)
 import Data.List (genericLength, maximumBy)
 import Data.Maybe (fromMaybe, catMaybes)
 import Data.Monoid ((<>))
-import Data.Tree (Tree (..))
+import Data.Tree (Tree (..), flatten)
 import qualified Control.Lens as L
 import qualified Data.Clustering.Hierarchical as HC
 import qualified Data.Graph.Inductive as G
@@ -60,10 +60,10 @@ stepCutDendrogram !n (HC.Branch d l r) =
 -- | Cut a tree based off of the number of steps from the root, combining
 -- the results.
 stepCut :: (Monoid a) => Int -> Tree a -> Tree a
-stepCut _ b@(Tree { subForest = [] }) = b
+stepCut _ b@(Node { subForest = [] }) = b
 stepCut 0 b = branchToLeaf b
-stepCut !n b@(Tree { subForest = xs }) =
-  b { subForest = fmap stepCutTree (n - 1) xs }
+stepCut !n b@(Node { subForest = xs }) =
+  b { subForest = fmap (stepCut (n - 1)) xs }
 
 -- | Cut a dendrogram based off of the minimum size of a leaf.
 sizeCutDendrogram
@@ -78,12 +78,12 @@ sizeCutDendrogram n b@(HC.Branch d l@(HC.Leaf ls) r@(HC.Leaf rs)) =
 -- | Cut a tree based off of the minimum size of a leaf.
 sizeCut
     :: (Monoid (t a), Traversable t)
-    => Int -> Tree (t a) -> Tree (t a)
-sizeCut _ b@(Tree { subForest = [] }) = branchToLeaf b
-sizeCut n b@(Tree { subForest = xs }) =
-    if any ((< n) . length . rootLabel) xs
+    => Int -> Tree (TreeNode (t a)) -> Tree (TreeNode (t a))
+sizeCut _ b@(Node { subForest = [] }) = branchToLeaf b
+sizeCut n b@(Node { subForest = xs }) =
+    if any ((< n) . length . L.view item . rootLabel) xs
         then branchToLeaf b
-        else b { subForest = fmap (sizeCutTree n) xs }
+        else b { subForest = fmap (sizeCut n) xs }
 
 -- | Cut a dendrogram based off of the proportion size of a leaf. Will absolute
 -- log2 transform before comparing, so if the cutoff size is 0.5 or 2 (twice as
@@ -117,16 +117,15 @@ proportionCutDendrogram n b@(HC.Branch d l r) =
 -- so if the cutoff size is 0.5 or 2 (twice as big or half as big), the result
 -- is the same. Stops when the node proportion is larger than the input,
 -- although leaving the children as well.
-proportionCut
-    :: (Monoid (t a), Traversable t)
-    => Double -> Tree (t a) -> Tree (t a)
-proportionCut _ b@(Tree { subForest = [] }) = b
+proportionCut :: (Monoid (t a), Traversable t)
+              => Double -> Tree (TreeNode (t a)) -> Tree (TreeNode (t a))
+proportionCut _ b@(Node { subForest = [] }) = b
 proportionCut _ b@(all isLeaf . subForest -> True) = b
-proportionCut n b@(Tree { subForest = xs }) =
-    if (absLog2 $ (maximum . lengthElementsTree $ xs) / (minimum . lengthElementsTree $ xs))
+proportionCut n b@(Node { subForest = xs }) =
+    if (absLog2 $ (maximum . fmap getSize $ xs) / (minimum . fmap getSize $ xs))
        > absLog2 n
         then b { subForest = fmap branchToLeaf xs }
-        else b { subForest = fmap proportionCutTree xs }
+        else b { subForest = fmap (proportionCut n) xs }
 
 -- | Cut a dendrogram based off of the distance, keeping up to and including the
 -- children of the stopping vertex. Stop is distance is less than the input
@@ -153,40 +152,40 @@ distanceCutDendrogram d (HC.Branch d' l r) =
 -- | Cut a tree based off of the distance, keeping up to and including the
 -- children of the stopping vertex. Stop is distance is less than the input
 -- distance.
-distanceCut :: Double -> Tree TreeNode -> Tree TreeNode
-distanceCut _ b@(Tree { subForest = [] }) = b
+distanceCut :: (Monoid a) => Double -> Tree (TreeNode a) -> Tree (TreeNode a)
+distanceCut _ b@(Node { subForest = [] }) = b
 distanceCut _ b@(all isLeaf . subForest -> True) = b
 distanceCut d b =
-    if (view (modularity . rootLabel) b) < d
+    if (L.view distance . rootLabel $ b) < Just d
         then b { subForest = fmap branchToLeaf . subForest $ b }
-        else b { subForest = fmap (distanceCutTree d) . subForest $ b }
+        else b { subForest = fmap (distanceCut d) . subForest $ b }
 
 -- | Get a property about each node in a dendrogram.
-getNodeInfo :: (HC.Dendrogram a -> b) -> HC.Dendrogram a -> [b]
-getNodeInfo f b@(HC.Leaf _)       = [f b]
-getNodeInfo f b@(HC.Branch d l r) = f b : (getNodeInfo f l <> getNodeInfo f r)
+getNodeInfoDend :: (HC.Dendrogram a -> b) -> HC.Dendrogram a -> [b]
+getNodeInfoDend f b@(HC.Leaf _)       = [f b]
+getNodeInfoDend f b@(HC.Branch d l r) =
+  f b : (getNodeInfoDend f l <> getNodeInfoDend f r)
 
 -- | Get a property about each node in a tree.
 getNodeInfo :: (Tree a -> b) -> Tree a -> [b]
-getNodeInfo f b@(Tree { subForest = [] }) = [f b]
-getNodeInfo f b = fmap f . flatten $ b
+getNodeInfo f b = f b : (concatMap (getNodeInfo f) . subForest $ b)
 
 -- | Get the length of elements in a dendrogram.
 getSizeDend :: (Monoid (t a), Traversable t, Num b) => HC.Dendrogram (t a) -> b
 getSizeDend = lengthElementsDend
-            
+
 -- | Get the length of elements in a tree.
-getSize :: (TreeNode a, Num b) => Tree TreeNode -> b
+getSize :: (Monoid (t a), Traversable t, Num b) => Tree (TreeNode (t a)) -> b
 getSize = lengthElementsTree
 
 -- | Get the distance of an item in a dendrogram.
 getDistanceDend :: HC.Dendrogram a -> Maybe Double
 getDistanceDend (HC.Leaf _) = Nothing
 getDistanceDend (HC.Branch d _ _) = Just d
-            
+
 -- | Get the distance of an item in a tree.
-getDistance :: Tree TreeNode -> Maybe Double
-getDistance = view modularity
+getDistance :: Tree (TreeNode a) -> Maybe Double
+getDistance = L.view distance . rootLabel
 
 -- | Get the proportion of the children sizes in a dendrogram.
 getProportionDend
@@ -194,13 +193,14 @@ getProportionDend
     => HC.Dendrogram (t a) -> Maybe Double
 getProportionDend (HC.Leaf _) = Nothing
 getProportionDend (HC.Branch _ l r) =
-    Just . absLog2 $ fromIntegral (getSize l) / fromIntegral (getSize r)
-    
+    Just . absLog2 $ fromIntegral (getSizeDend l) / fromIntegral (getSizeDend r)
+
 -- | Get the proportion of the children sizes in a tree.
-getProportion :: => Tree TreeNode -> Maybe Double
-getProportion (Tree { subForest = [] }) = Nothing
-getProportion (Tree { subForest = xs }) =
-    Just . absLog2 $ (maximum . getSize $ xs) / (minimum . getSize $ xs))
+getProportion :: (Monoid (t a), Traversable t)
+              => Tree (TreeNode (t a)) -> Maybe Double
+getProportion (Node { subForest = [] }) = Nothing
+getProportion (Node { subForest = xs }) =
+    Just . absLog2 $ (maximum . fmap getSize $ xs) / (minimum . fmap getSize $ xs)
 
 -- | Get the smart cut value of a dendrogram.
 smartCutDend
@@ -211,11 +211,11 @@ smartCutDend
     -> Double
 smartCutDend n f dend = median S.s xs + (n * mad S.s xs)
   where
-    xs = V.fromList . catMaybes . getNodeInfo f $ dend
+    xs = V.fromList . catMaybes . getNodeInfoDend f $ dend
 
 -- | Get the smart cut value of a tree.
 smartCut ::
-  Double -> (Tree TreeNode -> Maybe Double) -> Tree TreeNode -> Double
+  Double -> (Tree (TreeNode a) -> Maybe Double) -> Tree (TreeNode a) -> Double
 smartCut n f tree = median S.s xs + (n * mad S.s xs)
   where
     xs = V.fromList . catMaybes . getNodeInfo f $ tree

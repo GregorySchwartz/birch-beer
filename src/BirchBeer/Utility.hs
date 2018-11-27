@@ -17,7 +17,9 @@ module BirchBeer.Utility
     , lengthElementsTree
     , isLeaf
     , absLog2
+    , dendToTree
     , dendrogramToGraph
+    , treeToGraph
     , getGraphLeaves
     , getGraphLeavesCycles
     , getGraphLeavesWithParents
@@ -35,7 +37,7 @@ import Control.Monad (join)
 import Control.Monad.State (MonadState (..), State (..), evalState, execState, modify)
 import Data.Function (on)
 import Data.Int (Int32)
-import Data.List (genericLength, maximumBy)
+import Data.List (genericLength, maximumBy, foldl')
 import Data.Maybe (fromMaybe, catMaybes)
 import Data.Monoid ((<>))
 import Data.Tree (Tree (..), flatten)
@@ -83,13 +85,13 @@ branchToLeafDend (HC.Branch d l r)  =
 
 -- | Convert a branch or leaf to a leaf.
 branchToLeaf :: (Monoid a) => Tree a -> Tree a
-branchToLeaf b@(Tree { subForest = [] }) = b
-branchToLeaf b@(Tree { subForest = xs }) =
-  b { subForest = concatMap flatten xs }
+branchToLeaf b@(Node { subForest = [] }) = b
+branchToLeaf b@(Node { subForest = xs }) =
+  b { rootLabel = mconcat . concatMap flatten $ xs, subForest = [] }
 
 -- | Check if a Tree is a leaf.
 isLeaf :: Tree a -> Bool
-isLeaf (Tree { subForest = [] }) = True
+isLeaf (Node { subForest = [] }) = True
 isLeaf _                         = False
 
 -- | Log 2 absolute transformation.
@@ -103,17 +105,19 @@ lengthElementsDend
 lengthElementsDend = fromIntegral . sum . fmap length . HC.elements
 
 -- | Get the generic length of the elements of the tree.
-lengthElementsTree :: (TreeNode a, Num b) => Tree a -> b
-lengthElementsTree = fromIntegral . sum . fmap length . flatten
-                   
+lengthElementsTree :: (Monoid (t a), Traversable t, Num b)
+                   => Tree (TreeNode (t a)) -> b
+lengthElementsTree =
+  fromIntegral . sum . catMaybes . fmap (fmap length . L.view item) . flatten
+
 -- | Convert a dendrogram to a tree.
 dendToTree :: HC.Dendrogram a -> Tree (TreeNode a)
 dendToTree (HC.Leaf x) =
-  Tree { rootLabel = TreeNode { _modularity = Nothing, _item = Just x}
+  Node { rootLabel = TreeNode { _distance = Nothing, _item = Just x}
        , subForest = []
        }
 dendToTree (HC.Branch d l r)  =
-  Tree { rootLabel = TreeNode { _modularity = Just d, _item = Nothing }
+  Node { rootLabel = TreeNode { _distance = Just d, _item = Nothing }
        , subForest = [dendToTree l, dendToTree r]
        }
 
@@ -157,7 +161,7 @@ dendrogramToGraph =
 -- | Convert a tree with height as Q values to a graph for
 -- plotting with leaves containing all information. This also means that the
 -- node must be in the label as well.
-treeToGraph :: (TreeItem a) => Tree (TreeNode a) -> ClusterGraph a
+treeToGraph :: (TreeItem a) => Tree (TreeNode (V.Vector a)) -> ClusterGraph a
 treeToGraph =
     ClusterGraph
         . snd
@@ -165,24 +169,29 @@ treeToGraph =
         . go
   where
     go :: (TreeItem a)
-       => Tree (TreeNode a)
+       => Tree (TreeNode (V.Vector a))
        -> State (Int, G.Gr (G.Node, Maybe (Seq.Seq a)) Double) Int
-    go (Tree { rootLabel = TreeNode { _item = items }, subForest = [] }) = do
+    go (Node { rootLabel = TreeNode { _item = items }, subForest = [] }) = do
         (n, gr) <- get
 
-        modify (L.over L._1 (+ 1) . L.over L._2 (G.insNode (n, (n, Just . Seq.fromList . V.toList $ items))))
+        modify ( L.over L._1 (+ 1)
+               . L.over L._2 ( G.insNode ( n
+                                         , (n, Seq.fromList . V.toList <$> items)
+                                         )
+                             )
+               )
 
         return n
-    go (Tree { rootLabel = TreeNode { modularity = d, _item = items }, subForest = children }) = do
+    go (Node { rootLabel = TreeNode { _distance = d, _item = items }, subForest = children }) = do
         (n, gr) <- get
         modify (L.over L._1 (+ 1))
 
-        children <- fmap go children
+        children' <- mapM go children
 
         let setGr a = foldl'
-                        (\acc x -> G.insEdge (n, x, d) acc)
+                        (\acc x -> G.insEdge (n, x, fromMaybe 0 d) acc)
                         (G.insNode (n, (n, Nothing)) a)
-                        children
+                        children'
 
         modify (L.over L._2 setGr)
 

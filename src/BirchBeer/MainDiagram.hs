@@ -14,6 +14,7 @@ module BirchBeer.MainDiagram
 import Data.Bool (bool)
 import Data.List (foldl')
 import Data.Maybe (fromMaybe, isJust)
+import Data.Tree (Tree (..))
 import qualified Control.Lens as L
 import qualified Data.Clustering.Hierarchical as HC
 import qualified Data.Foldable as F
@@ -36,32 +37,33 @@ import BirchBeer.Utility
 mainDiagram
     :: (Eq a, Ord a, TreeItem a, MatrixLike b)
     => Config a b
-    -> IO (D.Diagram D.B, Maybe LabelColorMap, Maybe ItemColorMap, Maybe MarkColorMap, HC.Dendrogram (V.Vector a), ClusterGraph a)
+    -> IO (D.Diagram D.B, Maybe LabelColorMap, Maybe ItemColorMap, Maybe MarkColorMap, Tree (TreeNode (V.Vector a)), ClusterGraph a)
 mainDiagram config = do
-    let dend              = _birchDend config
+    let tree              = _birchTree config
         labelMap'         = _birchLabelMap config
         smartCutoff'      = _birchSmartCutoff config
         maxStep'          = _birchMaxStep config
         minSize'          =
             case (fmap unSmartCutoff smartCutoff', _birchMinSize config) of
-                (Just x, Just _)   -> Just
-                                    . MinClusterSize
-                                    . round
-                                    . (2 **)
-                                    . smartCut x (Just . logBase 2 . getSize)
-                                    $ dend
+                (Just x, Just _)   ->
+                  Just
+                    . MinClusterSize
+                    . round
+                    . (2 **)
+                    . smartCut x (Just . logBase 2 . getSize)
+                    $ tree
                 otherwise          -> _birchMinSize config
         maxProportion'    =
             case (fmap unSmartCutoff smartCutoff', _birchMaxProportion config) of
                 (Just x, Just _)   -> Just
                                     . MaxProportion
                                     . (2 **)
-                                    $ smartCut x getProportion dend
+                                    $ smartCut x getProportion tree
                 otherwise          -> _birchMaxProportion config
         minDistance'      =
             case (fmap unSmartCutoff smartCutoff', _birchMinDistance config) of
                 (Just x, Just _)   ->
-                    Just . MinDistance $ smartCut x getDistance dend
+                    Just . MinDistance $ smartCut x getDistance tree
                 otherwise          -> _birchMinDistance config
         drawLeaf'         = _birchDrawLeaf config
         drawCollection'   = _birchDrawCollection config
@@ -78,15 +80,15 @@ mainDiagram config = do
         mat               = return $ _birchMat config
         simMat            = _birchSimMat config
 
-        -- Prune dendrogram.
-        dend' = foldl' (\acc f -> f acc) dend
-              $ [ (\x -> maybe x (flip proportionCutDendrogram x . unMaxProportion) maxProportion')
-                , (\x -> maybe x (flip distanceCutDendrogram x . unMinDistance) minDistance')
-                , (\x -> maybe x (flip sizeCutDendrogram x . unMinClusterSize) minSize')
-                , (\x -> maybe x (flip stepCutDendrogram x . unMaxStep) maxStep')
+        -- Prune tree.
+        tree' = foldl' (\acc f -> f acc) tree
+              $ [ (\x -> maybe x (flip proportionCut x . unMaxProportion) maxProportion')
+                , (\x -> maybe x (flip distanceCut x . unMinDistance) minDistance')
+                , (\x -> maybe x (flip sizeCut x . unMinClusterSize) minSize')
+                , (\x -> maybe x (flip stepCut x . unMaxStep) maxStep')
                 ]
         -- Load graph.
-        gr    = dendrogramToGraph dend'
+        gr    = treeToGraph tree'
 
         -- Load draw configurations.
         drawConfig        = DrawConfig
@@ -204,4 +206,4 @@ mainDiagram config = do
                 leafGraphMap
                 gr
 
-    return (plot, labelColorMap, itemColorMap, markColorMap, dend', gr)
+    return (plot, labelColorMap, itemColorMap, markColorMap, tree', gr)

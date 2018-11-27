@@ -17,6 +17,7 @@ module BirchBeer.Interactive
 import Data.Bool (bool)
 import Data.Colour.SRGB (sRGB24reads)
 import Data.Maybe (catMaybes)
+import Data.Tree (Tree (..))
 import Safe (headMay)
 import Text.Read (readMaybe)
 import System.IO.Temp (withTempFile)
@@ -38,12 +39,12 @@ import BirchBeer.Types
 -- | Interactive version of the tree.
 interactiveDiagram
     :: (Eq a, Ord a, TreeItem a, MatrixLike b)
-    => HC.Dendrogram (V.Vector a)
+    => Tree (TreeNode (V.Vector a))
     -> Maybe LabelMap
     -> Maybe b
     -> Maybe (SimMatrix b)
     -> IO ()
-interactiveDiagram dend labelMap mat simMat = graphicalUI' "birch-beer" $ do
+interactiveDiagram tree labelMap mat simMat = graphicalUI' "birch-beer" $ do
     minSize'  <-
         fmap (MinClusterSize . round) $ TS.spinButtonAt 1 "Minimum cluster size" 1
     maxStep'  <- fmap (MaxStep . round)
@@ -110,7 +111,7 @@ interactiveDiagram dend labelMap mat simMat = graphicalUI' "birch-beer" $ do
                             , _birchDrawPalette      = drawPalette'
                             , _birchDrawColors       = drawColors'
                             , _birchDrawScaleSaturation = drawScaleSaturation'
-                            , _birchDend             = dend
+                            , _birchTree             = tree
                             , _birchMat              = mat
                             , _birchSimMat           = simMat
                             }

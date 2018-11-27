@@ -20,8 +20,9 @@ import Data.Colour.Palette.BrewerSet (Kolor)
 import Data.Colour.SRGB (Colour (..), RGB (..))
 import Data.Colour.SRGB.Linear (toRGB)
 import Data.Map.Strict (Map)
+import Data.Tree (Tree (..))
 import Diagrams.Backend.Cairo
-import Diagrams.Prelude
+import Diagrams.Prelude hiding (distance)
 import GHC.Generics (Generic)
 import TextShow (showt)
 import qualified Control.Lens as L
@@ -37,6 +38,36 @@ import qualified Data.Text as T
 import qualified Data.Vector as V
 
 -- Local
+
+class TreeItem a where
+    getId :: a -> Id
+
+instance TreeItem T.Text where
+    getId = Id
+
+class MatrixLike a where
+    getMatrix   :: a -> S.SpMatrix Double
+    getRowNames :: a -> V.Vector T.Text
+    getColNames :: a -> V.Vector T.Text
+
+instance MatrixLike (S.SpMatrix Double) where
+    getMatrix       = id
+    getRowNames mat = V.fromList . fmap showt $ [1..S.nrows mat]
+    getColNames mat = V.fromList . fmap showt $ [1..S.nrows mat]
+
+instance MatrixLike NamedMatrix where
+    getMatrix   = _namedMat
+    getRowNames = _namedRows
+    getColNames = _namedCols
+
+-- instance Generic (Colour a)
+-- instance NFData a => NFData (Colour a)
+instance NFData (Colour a) where rnf x = seq x ()
+
+deriving instance (Eq a, Ord a, Fractional a) => Ord (RGB a)
+
+instance (Eq a, Ord a, Fractional a) => Ord (Colour a) where
+    compare x y = toRGB y `compare` toRGB x
 
 -- Basic
 newtype Delimiter = Delimiter
@@ -182,7 +213,7 @@ data Config a b = Config
     , _birchDrawPalette      :: Palette
     , _birchDrawColors       :: Maybe CustomColors
     , _birchDrawScaleSaturation :: Maybe DrawScaleSaturation
-    , _birchDend             :: HC.Dendrogram (V.Vector a)
+    , _birchTree             :: Tree (TreeNode (V.Vector a))
     , _birchMat              :: Maybe b
     , _birchSimMat           :: Maybe (SimMatrix b)
     }
@@ -194,44 +225,15 @@ data NamedMatrix = NamedMatrix
     }
 
 data TreeNode a = TreeNode
-    { _modularity :: Maybe Double
+    { _distance :: Maybe Double
     , _item :: Maybe a
-    }
+    } deriving (A.FromJSON, A.ToJSON, Generic, Read, Show)
+makeLenses ''TreeNode
 
-class TreeItem a where
-    getId :: a -> Id
-
-instance TreeItem T.Text where
-    getId = Id
-
-class MatrixLike a where
-    getMatrix   :: a -> S.SpMatrix Double
-    getRowNames :: a -> V.Vector T.Text
-    getColNames :: a -> V.Vector T.Text
-
-instance MatrixLike (S.SpMatrix Double) where
-    getMatrix       = id
-    getRowNames mat = V.fromList . fmap showt $ [1..S.nrows mat]
-    getColNames mat = V.fromList . fmap showt $ [1..S.nrows mat]
-
-instance MatrixLike NamedMatrix where
-    getMatrix   = _namedMat
-    getRowNames = _namedRows
-    getColNames = _namedCols
-
--- instance Generic (Colour a)
--- instance NFData a => NFData (Colour a)
-instance NFData (Colour a) where rnf x = seq x ()
-
-deriving instance (Eq a, Ord a, Fractional a) => Ord (RGB a)
-
-instance (Eq a, Ord a, Fractional a) => Ord (Colour a) where
-    compare x y = toRGB y `compare` toRGB x
-
-instance (TreeItem a) => Semigroup (TreeNode a) where
-  (<>) x y  = TreeNode { _modularity = view modularity x
-                       , _item = (<>) (view item x) (view item y)
+instance (Semigroup a) => Semigroup (TreeNode a) where
+  (<>) x y  = TreeNode { _distance = L.view distance x
+                       , _item = (<>) (L.view item x) (L.view item y)
                        }
 
-instance (TreeItem a) => Monoid (TreeNode a) where
-  mempty = TreeNode { _modularity = Nothing, _item = mempty }
+instance (Semigroup a) => Monoid (TreeNode a) where
+  mempty = TreeNode { _distance = Nothing, _item = mempty }

@@ -10,14 +10,18 @@ Collects the functions pertaining to loading labels for the tree.
 
 module BirchBeer.Load
     ( loadLabelData
-    , loadDend
+    , loadDendFromFile
+    , loadTreeFromFile
+    , loadTreeOrDendFromFile
     , loadMatrix
     ) where
 
 -- Remote
+import Control.Applicative ((<|>))
 import Data.Char (ord)
 import Data.Matrix.MatrixMarket (readMatrix, Matrix(RMatrix, IntMatrix), Structure (..))
 import Data.Scientific (toRealFloat, Scientific)
+import Data.Tree (Tree (..))
 import qualified Data.Aeson as A
 import qualified Data.ByteString.Lazy.Char8 as B
 import qualified Data.Clustering.Hierarchical as HC
@@ -54,8 +58,20 @@ loadLabelData (Delimiter delim) (LabelFile file) = do
     return . LabelMap . Map.unions . fmap toLabelMap . V.toList $ rows
 
 -- | Load a dendrogram from a file.
-loadDend :: FilePath -> IO (HC.Dendrogram (V.Vector T.Text))
-loadDend file = fmap (either error id . A.eitherDecode) . B.readFile $ file
+loadDendFromFile :: FilePath -> IO (Either String (HC.Dendrogram (V.Vector T.Text)))
+loadDendFromFile file = fmap A.eitherDecode . B.readFile $ file
+
+-- | Load a tree from a file.
+loadTreeFromFile :: FilePath -> IO (Either String (Tree (TreeNode (V.Vector T.Text))))
+loadTreeFromFile file = fmap A.eitherDecode . B.readFile $ file
+
+-- | Load a format for the tree from a file.
+loadTreeOrDendFromFile :: FilePath -> IO (Tree (TreeNode (V.Vector T.Text)))
+loadTreeOrDendFromFile file = do
+  dend <- (fmap . fmap) dendToTree $ loadDendFromFile file
+  tree <- loadTreeFromFile file
+
+  return . either error id $ dend <> tree
 
 -- | Convert a Matrix to a sparse matrix.
 matToSpMat :: Matrix Scientific -> S.SpMatrix Double

@@ -159,7 +159,7 @@ main = do
         output'           =
             fromMaybe "dendrogram.svg" . unHelpful . output $ opts
 
-    dend <- loadDend input'
+    tree <- loadTreeOrDendFromFile input'
 
     -- Get the label map from either a file or from expression thresholds.
     labelMap <- case drawLeaf' of
@@ -215,7 +215,7 @@ main = do
                         , _birchDrawPalette      = drawPalette'
                         , _birchDrawColors       = drawColors'
                         , _birchDrawScaleSaturation = drawScaleSaturation'
-                        , _birchDend             = dend
+                        , _birchTree             = tree
                         , _birchMat              = Nothing
                         , _birchSimMat           = simMat
                         }
@@ -227,6 +227,6 @@ main = do
             (D.mkHeight 1000)
             plot
 
-    when (unHelpful . interactive $ opts) $ interactiveDiagram dend labelMap (Nothing :: Maybe NamedMatrix) simMat
+    when (unHelpful . interactive $ opts) $ interactiveDiagram tree labelMap (Nothing :: Maybe NamedMatrix) simMat
 
     return ()
