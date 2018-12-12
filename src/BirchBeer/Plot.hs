@@ -396,7 +396,20 @@ drawGraphPath opts ncm gr (n1, _) p1 (n2, _) p2 _ _ =
     c1           = getNodeColor ncm n1
     c2           = getNodeColor ncm n2
     trail        = getEdgeTrail p1 p2 (height draw1) (height draw2)
-    drawNode n p = drawGraphNode opts Nothing ncm Nothing Nothing gr (n, Nothing) p -- DrawText is irrelevant here.
+    drawNode n p = drawGraphNode  -- DrawText is irrelevant here.
+                    (resetLeafSize opts)
+                    Nothing
+                    ncm
+                    Nothing
+                    Nothing
+                    gr
+                    (n, Nothing)
+                    p 
+    resetLeafSize x = x { _drawMaxLeafNodeSize = DrawMaxLeafNodeSize  -- Reset the leaf node size to behave like an inner node.
+                                               . unDrawMaxNodeSize
+                                               . _drawMaxNodeSize
+                                               $ x
+                        }
 
 -- | Determine the smallest axis.
 smallestAxis dia = min (width dia) (height dia)
@@ -425,13 +438,13 @@ drawGraphNode opts@(DrawConfig { _drawLeaf = DrawText }) cm _ _ _ gr (n, Just it
     dia = itemDia # scaleAxis itemDia scaleVal
     itemDia = drawGraphLabel cm items
     background = circle 1 # fc white # lw none # scaleUToY scaleVal
-    maxNodeSize = unDrawMaxNodeSize . _drawMaxNodeSize $ opts
+    maxLeafNodeSize = unDrawMaxLeafNodeSize . _drawMaxLeafNodeSize $ opts
     textDia True  = text (show n) # fc black
     textDia False = mempty
     dnn = unDrawNodeNumber . _drawNodeNumber $ opts
     scaleVal = if unDrawNoScaleNodesFlag . _drawNoScaleNodesFlag $ opts
-                then maxNodeSize
-                else getScaledLeafSize maxClusterSize' maxNodeSize items
+                then maxLeafNodeSize
+                else getScaledLeafSize maxClusterSize' maxLeafNodeSize items
     maxClusterSize' = maxClusterSize . unClusterGraph $ gr
 drawGraphNode opts@(DrawConfig { _drawLeaf = (DrawItem drawType) }) cm ncm _ lgdm gr (n, Just items) pos =
     ((textDia dnn # fontSize (local $ smallestAxis dia)) <> dia) # moveTo pos
@@ -457,9 +470,9 @@ drawGraphNode opts@(DrawConfig { _drawLeaf = (DrawItem drawType) }) cm ncm _ lgd
     collectionDia x       =
         scaleUToY scaleVal $ drawCollectionItem x cm lgdm n items
     scaleVal = if unDrawNoScaleNodesFlag . _drawNoScaleNodesFlag $ opts
-                then maxNodeSize
-                else getScaledLeafSize maxClusterSize' maxNodeSize items
-    maxNodeSize = unDrawMaxNodeSize . _drawMaxNodeSize $ opts
+                then maxLeafNodeSize
+                else getScaledLeafSize maxClusterSize' maxLeafNodeSize items
+    maxLeafNodeSize = unDrawMaxLeafNodeSize . _drawMaxLeafNodeSize $ opts
     maxClusterSize' = maxClusterSize . unClusterGraph $ gr
     textDia True  = text (show n) # fc black
     textDia False = mempty

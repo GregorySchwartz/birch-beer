@@ -118,6 +118,9 @@ newtype LeafGraphNodes = LeafGraphNodes
 newtype DrawMaxNodeSize = DrawMaxNodeSize
     { unDrawMaxNodeSize :: Double
     } deriving (Read,Show)
+newtype DrawMaxLeafNodeSize = DrawMaxLeafNodeSize
+    { unDrawMaxLeafNodeSize :: Double
+    } deriving (Read,Show)
 newtype DrawNodeNumber = DrawNodeNumber
     { unDrawNodeNumber :: Bool
     } deriving (Read,Show)
@@ -190,32 +193,34 @@ data DrawConfig = DrawConfig
     , _drawCollection       :: DrawCollection
     , _drawNodeNumber       :: DrawNodeNumber
     , _drawMaxNodeSize      :: DrawMaxNodeSize
+    , _drawMaxLeafNodeSize  :: DrawMaxLeafNodeSize
     , _drawNoScaleNodesFlag :: DrawNoScaleNodesFlag
     , _drawLegendSep        :: DrawLegendSep
     } deriving (Read,Show)
 
 data Config a b = Config
-    { _birchLabelMap         :: Maybe LabelMap
-    , _birchSmartCutoff      :: Maybe SmartCutoff
-    , _birchMinSize          :: Maybe MinClusterSize
-    , _birchMaxStep          :: Maybe MaxStep
-    , _birchMaxProportion    :: Maybe MaxProportion
-    , _birchMinDistance      :: Maybe MinDistance
-    , _birchOrder            :: Maybe Order
-    , _birchDrawLeaf         :: DrawLeaf
-    , _birchDrawCollection   :: DrawCollection
-    , _birchDrawMark         :: DrawNodeMark
-    , _birchDrawNodeNumber   :: DrawNodeNumber
-    , _birchDrawMaxNodeSize  :: DrawMaxNodeSize
-    , _birchDrawNoScaleNodes :: DrawNoScaleNodesFlag
+    { _birchLabelMap            :: Maybe LabelMap
+    , _birchSmartCutoff         :: Maybe SmartCutoff
+    , _birchMinSize             :: Maybe MinClusterSize
+    , _birchMaxStep             :: Maybe MaxStep
+    , _birchMaxProportion       :: Maybe MaxProportion
+    , _birchMinDistance         :: Maybe MinDistance
+    , _birchOrder               :: Maybe Order
+    , _birchDrawLeaf            :: DrawLeaf
+    , _birchDrawCollection      :: DrawCollection
+    , _birchDrawMark            :: DrawNodeMark
+    , _birchDrawNodeNumber      :: DrawNodeNumber
+    , _birchDrawMaxNodeSize     :: DrawMaxNodeSize
+    , _birchDrawMaxLeafNodeSize :: DrawMaxLeafNodeSize
+    , _birchDrawNoScaleNodes    :: DrawNoScaleNodesFlag
     , _birchDrawLegendAllLabels :: DrawLegendAllLabels
-    , _birchDrawLegendSep    :: DrawLegendSep
-    , _birchDrawPalette      :: Palette
-    , _birchDrawColors       :: Maybe CustomColors
+    , _birchDrawLegendSep       :: DrawLegendSep
+    , _birchDrawPalette         :: Palette
+    , _birchDrawColors          :: Maybe CustomColors
     , _birchDrawScaleSaturation :: Maybe DrawScaleSaturation
-    , _birchTree             :: Tree (TreeNode (V.Vector a))
-    , _birchMat              :: Maybe b
-    , _birchSimMat           :: Maybe (SimMatrix b)
+    , _birchTree                :: Tree (TreeNode (V.Vector a))
+    , _birchMat                 :: Maybe b
+    , _birchSimMat              :: Maybe (SimMatrix b)
     }
 
 data NamedMatrix = NamedMatrix

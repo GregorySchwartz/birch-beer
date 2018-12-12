@@ -58,6 +58,7 @@ data Options = Options
     , drawMark :: Maybe String <?> "([MarkNone] | MarkModularity) How to draw annotations around each inner node in the tree. MarkNone draws nothing and MarkModularity draws a black circle representing the modularity at that node, darker black means higher modularity for that next split."
     , drawNodeNumber :: Bool <?> "Draw the node numbers on top of each node in the graph."
     , drawMaxNodeSize :: Maybe Double <?> "([72] | DOUBLE) The max node size when drawing the graph. 36 is the theoretical default, but here 72 makes for thicker branches."
+    , drawMaxLeafNodeSize :: Maybe Double <?> "([--draw-max-node-size] | DOUBLE) The max leaf node size when drawing the graph. Defaults to the value of --draw-max-node-size."
     , drawNoScaleNodes :: Bool <?> "Do not scale inner node size when drawing the graph. Instead, uses draw-max-node-size as the size of each node and is highly recommended to change as the default may be too large for this option."
     , drawLegendSep :: Maybe Double <?> "([1] | DOUBLE) The amount of space between the legend and the tree."
     , drawLegendAllLabels :: Bool <?> "Whether to show all the labels in the label file instead of only showing labels within the current tree. The program generates colors from all labels in the label file first in order to keep consistent colors. By default, this value is false, meaning that only the labels present in the tree are shown (even though the colors are the same). The subset process occurs after --draw-colors, so when using that argument make sure to account for all labels."
@@ -82,6 +83,7 @@ modifiers = lispCaseModifiers { shortNameModifier = short }
     short "drawColors"           = Just 'R'
     short "drawNoScaleNodes"     = Just 'W'
     short "drawMaxNodeSize"      = Just 'A'
+    short "drawMaxLeafNodeSize"  = Nothing
     short "drawLegendSep"        = Just 'Q'
     short "drawLegendAllLabels"  = Just 'J'
     short "drawPalette"          = Just 'Y'
@@ -110,28 +112,33 @@ main = do
         minDistance'      = fmap MinDistance . unHelpful . minDistance $ opts
         smartCutoff'      = fmap SmartCutoff . unHelpful . smartCutoff $ opts
         order'            = fmap Order . unHelpful . order $ opts
-        drawLeaf'         =
+        drawLeaf'            =
             maybe
               (maybe DrawText (const (DrawItem DrawLabel)) labelsFile')
               (fromMaybe (error "Cannot read draw-leaf.") . readMaybe)
                 . unHelpful
                 . drawLeaf
                 $ opts
-        drawCollection'   = maybe
-                              PieChart
-                              (fromMaybe (error "Cannot read draw-collection.") . readMaybe)
-                          . unHelpful
-                          . drawCollection
-                          $ opts
-        drawMark'         = maybe
-                                MarkNone
-                                (fromMaybe (error "Cannot read draw-mark.") . readMaybe)
-                          . unHelpful
-                          . drawMark
-                          $ opts
-        drawNodeNumber'   = DrawNodeNumber . unHelpful . drawNodeNumber $ opts
-        drawMaxNodeSize'  =
+        drawCollection'      = maybe
+                                 PieChart
+                                 (fromMaybe (error "Cannot read draw-collection.") . readMaybe)
+                             . unHelpful
+                             . drawCollection
+                             $ opts
+        drawMark'            = maybe
+                                   MarkNone
+                                   (fromMaybe (error "Cannot read draw-mark.") . readMaybe)
+                             . unHelpful
+                             . drawMark
+                             $ opts
+        drawNodeNumber'      = DrawNodeNumber . unHelpful . drawNodeNumber $ opts
+        drawMaxNodeSize'     =
             DrawMaxNodeSize . fromMaybe 72 . unHelpful . drawMaxNodeSize $ opts
+        drawMaxLeafNodeSize' = DrawMaxLeafNodeSize
+                             . fromMaybe (unDrawMaxNodeSize drawMaxNodeSize')
+                             . unHelpful
+                             . drawMaxLeafNodeSize
+                             $ opts
         drawNoScaleNodes' =
             DrawNoScaleNodesFlag . unHelpful . drawNoScaleNodes $ opts
         drawLegendSep'    = DrawLegendSep
@@ -141,19 +148,19 @@ main = do
                           $ opts
         drawLegendAllLabels' =
             DrawLegendAllLabels . unHelpful . drawLegendAllLabels $ opts
-        drawPalette' = maybe
-                        Set1
-                        (fromMaybe (error "Cannot read palette") . readMaybe)
-                     . unHelpful
-                     . drawPalette
-                     $ opts
-        drawColors'       = fmap ( CustomColors
-                                 . fmap sRGB24read
-                                 . (\x -> read x :: [String])
-                                 )
-                          . unHelpful
-                          . drawColors
-                          $ opts
+        drawPalette'    = maybe
+                           Set1
+                           (fromMaybe (error "Cannot read palette") . readMaybe)
+                        . unHelpful
+                        . drawPalette
+                        $ opts
+        drawColors'     = fmap ( CustomColors
+                               . fmap sRGB24read
+                               . (\x -> read x :: [String])
+                               )
+                        . unHelpful
+                        . drawColors
+                        $ opts
         drawScaleSaturation' =
             fmap DrawScaleSaturation . unHelpful . drawScaleSaturation $ opts
         output'           =
@@ -197,27 +204,28 @@ main = do
     simMat <- sequence . fmap readMat $ inputMatrix'
 
     let config :: Config T.Text NamedMatrix
-        config = Config { _birchLabelMap         = labelMap
-                        , _birchMinSize          = minSize'
-                        , _birchMaxStep          = maxStep'
-                        , _birchMaxProportion    = maxProportion'
-                        , _birchMinDistance      = minDistance'
-                        , _birchSmartCutoff      = smartCutoff'
-                        , _birchOrder            = order'
-                        , _birchDrawLeaf         = drawLeaf'
-                        , _birchDrawCollection   = drawCollection'
-                        , _birchDrawMark         = drawMark'
-                        , _birchDrawNodeNumber   = drawNodeNumber'
-                        , _birchDrawMaxNodeSize  = drawMaxNodeSize'
-                        , _birchDrawNoScaleNodes = drawNoScaleNodes'
-                        , _birchDrawLegendSep    = drawLegendSep'
+        config = Config { _birchLabelMap            = labelMap
+                        , _birchMinSize             = minSize'
+                        , _birchMaxStep             = maxStep'
+                        , _birchMaxProportion       = maxProportion'
+                        , _birchMinDistance         = minDistance'
+                        , _birchSmartCutoff         = smartCutoff'
+                        , _birchOrder               = order'
+                        , _birchDrawLeaf            = drawLeaf'
+                        , _birchDrawCollection      = drawCollection'
+                        , _birchDrawMark            = drawMark'
+                        , _birchDrawNodeNumber      = drawNodeNumber'
+                        , _birchDrawMaxNodeSize     = drawMaxNodeSize'
+                        , _birchDrawMaxLeafNodeSize = drawMaxLeafNodeSize'
+                        , _birchDrawNoScaleNodes    = drawNoScaleNodes'
+                        , _birchDrawLegendSep       = drawLegendSep'
                         , _birchDrawLegendAllLabels = drawLegendAllLabels'
-                        , _birchDrawPalette      = drawPalette'
-                        , _birchDrawColors       = drawColors'
+                        , _birchDrawPalette         = drawPalette'
+                        , _birchDrawColors          = drawColors'
                         , _birchDrawScaleSaturation = drawScaleSaturation'
-                        , _birchTree             = tree
-                        , _birchMat              = Nothing
-                        , _birchSimMat           = simMat
+                        , _birchTree                = tree
+                        , _birchMat                 = Nothing
+                        , _birchSimMat              = simMat
                         }
 
     (plot, _, _, _, _, _) <- mainDiagram config

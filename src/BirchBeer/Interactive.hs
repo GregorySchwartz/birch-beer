@@ -67,6 +67,9 @@ interactiveDiagram tree labelMap mat simMat = graphicalUI' "birch-beer" $ do
     drawMaxNodeSize' <-
         fmap DrawMaxNodeSize
             $ TS.spinButtonAt 72 "Maximum size of drawn node" 1
+    drawMaxLeafNodeSize' <-
+        fmap DrawMaxLeafNodeSize
+            $ TS.spinButtonAt 72 "Maximum size of drawn leaf node" 1
     drawNoScaleNodes' <-
         fmap DrawNoScaleNodesFlag $ TS.checkBox "Do not scale nodes"
     drawLegendSep' <-
@@ -93,27 +96,28 @@ interactiveDiagram tree labelMap mat simMat = graphicalUI' "birch-beer" $ do
                             DrawItem (DrawContinuous _) ->
                                 DrawItem (DrawContinuous drawContinuousGene')
                             x -> x
-            config = Config { _birchLabelMap         = labelMap
-                            , _birchMinSize          = Just minSize'
-                            , _birchMaxStep          = Just maxStep'
-                            , _birchMaxProportion    = Nothing
-                            , _birchMinDistance      = Nothing
-                            , _birchSmartCutoff      = Nothing
-                            , _birchOrder            = Nothing
-                            , _birchDrawLeaf         = drawLeaf'
-                            , _birchDrawCollection   = drawCollection'
-                            , _birchDrawMark         = drawMark'
-                            , _birchDrawNodeNumber   = drawNodeNumber'
-                            , _birchDrawMaxNodeSize  = drawMaxNodeSize'
-                            , _birchDrawNoScaleNodes = drawNoScaleNodes'
-                            , _birchDrawLegendSep    = drawLegendSep'
+            config = Config { _birchLabelMap            = labelMap
+                            , _birchMinSize             = Just minSize'
+                            , _birchMaxStep             = Just maxStep'
+                            , _birchMaxProportion       = Nothing
+                            , _birchMinDistance         = Nothing
+                            , _birchSmartCutoff         = Nothing
+                            , _birchOrder               = Nothing
+                            , _birchDrawLeaf            = drawLeaf'
+                            , _birchDrawCollection      = drawCollection'
+                            , _birchDrawMark            = drawMark'
+                            , _birchDrawNodeNumber      = drawNodeNumber'
+                            , _birchDrawMaxNodeSize     = drawMaxNodeSize'
+                            , _birchDrawMaxLeafNodeSize = drawMaxLeafNodeSize'
+                            , _birchDrawNoScaleNodes    = drawNoScaleNodes'
+                            , _birchDrawLegendSep       = drawLegendSep'
                             , _birchDrawLegendAllLabels = DrawLegendAllLabels False
-                            , _birchDrawPalette      = drawPalette'
-                            , _birchDrawColors       = drawColors'
+                            , _birchDrawPalette         = drawPalette'
+                            , _birchDrawColors          = drawColors'
                             , _birchDrawScaleSaturation = drawScaleSaturation'
-                            , _birchTree             = tree
-                            , _birchMat              = mat
-                            , _birchSimMat           = simMat
+                            , _birchTree                = tree
+                            , _birchMat                 = mat
+                            , _birchSimMat              = simMat
                             }
         in fmap (L.view L._1) $ mainDiagram config
 

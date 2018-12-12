@@ -70,6 +70,7 @@ mainDiagram config = do
         drawMark'         = _birchDrawMark config
         drawNodeNumber'   = _birchDrawNodeNumber config
         drawMaxNodeSize'  = _birchDrawMaxNodeSize config
+        drawMaxLeafNodeSize' = _birchDrawMaxLeafNodeSize config
         drawNoScaleNodes' = _birchDrawNoScaleNodes config
         drawLegendAllLabels' = _birchDrawLegendAllLabels config
         drawLegendSep'    = _birchDrawLegendSep config
@@ -96,6 +97,7 @@ mainDiagram config = do
                                 drawCollection'
                                 drawNodeNumber'
                                 drawMaxNodeSize'
+                                drawMaxLeafNodeSize'
                                 drawNoScaleNodes'
                                 drawLegendSep'
 
