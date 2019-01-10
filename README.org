@@ -46,6 +46,9 @@ stack setup
 
 *** Source
 
+Probably the easiest method if you don't want to mess with dependencies (outside
+of the ones above).
+
 #+BEGIN_SRC sh
 git clone https://github.com/GregorySchwartz/birch-beer.git
 cd birch-beer
