@@ -54,6 +54,10 @@ code, just run the following command to place =birch-beer= in your
 stack install birch-beer
 #+END_SRC
 
+If you run into errors like =Error: While constructing the build plan, the
+following exceptions were encountered:=, then follow it's advice. Usually you
+just need to follow the suggestion and add the dependencies to the specified file.
+
 *** Source
 
 #+BEGIN_SRC sh
