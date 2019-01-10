@@ -44,11 +44,19 @@ stack setup
 
 ** Install =birch-beer=
 
+*** Source
+
+#+BEGIN_SRC sh
+git clone https://github.com/GregorySchwartz/birch-beer.git
+cd birch-beer
+stack install
+#+END_SRC
+
 *** Online
 
 We only require =stack= (or =cabal=), you do not need to download any source
-code, just run the following command to place =birch-beer= in your
-=~/.local/bin/=:
+code (but you might need the stack.yaml dependency versions), just run the
+following command to place =birch-beer= in your =~/.local/bin/=:
 
 #+BEGIN_SRC sh
 stack install birch-beer
