@@ -4,6 +4,8 @@
 
 #+SETUPFILE: https://fniessen.github.io/org-html-themes/setup/theme-readtheorg.setup
 
+[[https://gregoryschwartz.github.io/birch-beer/][Website]]
+
 See [[https://github.com/GregorySchwartz/birch-beer]] for latest version.
 
 * Description
