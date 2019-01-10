@@ -40,9 +40,9 @@ packages:
 # Dependency packages to be pulled from upstream that are not in the resolver
 # (e.g., acme-missiles-0.3)
 extra-deps:
-- /home/gw/code/utility/hierarchical-spectral-clustering/
-- /home/gw/code/utility/modularity/
-- /home/gw/code/utility/spectral-clustering/
+- spectral-clustering-0.2.1.2
+- hierarchical-spectral-clustering-0.2.1.0
+- modularity-0.2.0.3
 - SVGFonts-1.6.0.3
 - clustering-0.4.0
 - cubicbezier-0.6.0.5
@@ -70,8 +70,8 @@ extra-deps:
 - streaming-cassava-0.1.0.1
 - streaming-with-0.2.1.1
 - typed-spreadsheet-1.1.3
-- git: https://github.com/GregorySchwartz/hierarchical-clustering-diagrams.git
-  commit: b92d8cc9b5275df38198ede27b58f7e35aaf69d1
+# - git: https://github.com/GregorySchwartz/hierarchical-clustering-diagrams.git
+#   commit: b92d8cc9b5275df38198ede27b58f7e35aaf69d1
 
 # Override default flag values for local packages and extra-deps
 # flags: {}

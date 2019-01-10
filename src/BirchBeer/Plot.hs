@@ -12,8 +12,7 @@ Collects the functions pertaining to plotting the clusterings.
 {-# LANGUAGE GADTs #-}
 
 module BirchBeer.Plot
-    ( plotDendrogram
-    , plotGraph
+    ( plotGraph
     , plotLabelLegend
     , plotContinuousLegend
     , plotSumContinuousLegend
@@ -32,7 +31,7 @@ import Data.List (nub, sort, sortBy, foldl1', transpose)
 import Data.Maybe (fromMaybe, isNothing)
 import Data.Tuple (swap)
 import Diagrams.Backend.Cairo
-import Diagrams.Dendrogram (dendrogramCustom, Width(..))
+-- import Diagrams.Dendrogram (dendrogramCustom, Width(..))
 import Diagrams.Prelude
 import Diagrams.TwoD.Arrow
 import Graphics.SVGFonts
@@ -61,50 +60,50 @@ import BirchBeer.Types
 import BirchBeer.Utility
 import BirchBeer.ColorMap
 
--- | Plot a dendrogram.
-plotDendrogram
-    :: (TreeItem a)
-    => Maybe (Diagram B)
-    -> DrawLeaf
-    -> Maybe ItemColorMap
-    -> HC.Dendrogram (V.Vector a)
-    -> Diagram B
-plotDendrogram Nothing drawLeaf cm dend =
-    pad 1
-        . center
-        . dendrogramCustom
-            Variable
-            (whichLeaf drawLeaf $ cm)
-            (dendrogramPathLabel drawLeaf cm)
-            ((\tree items -> lw 0.3 . scaleToY (3 * height items) $ tree), curry snd)
-        $ dend
-  where
-    whichLeaf DrawText     = dendrogramLeafLabel
-    whichLeaf (DrawItem _) = dendrogramLeafItem
-plotDendrogram (Just legend) drawLeaf cm dend =
-    pad 1
-        . hsep 1
-        $   [ alignT
-            . center
-            . dendrogramCustom
-                Variable
-                (whichLeaf drawLeaf $ cm)
-                (dendrogramPathLabel drawLeaf cm)
-                ((\tree items -> lw 0.3 . scaleToY (2 * height items) $ tree), curry snd)
-            $ dend
-            , pad 2 . alignT . lw 0.3 center . scaleUToY (height tree / 6) $ legend
-            ]
-  where
-    tree = alignT
-         . center
-         . dendrogramCustom
-             Variable
-             (whichLeaf drawLeaf $ cm)
-             (dendrogramPathLabel drawLeaf cm)
-             ((\tree items -> lw 0.1 . scaleToY (3 * height items) $ tree), curry snd)
-         $ dend
-    whichLeaf DrawText     = dendrogramLeafLabel
-    whichLeaf (DrawItem _) = dendrogramLeafItem
+-- -- | Plot a dendrogram. Unused until upstream is updated.
+-- plotDendrogram
+--     :: (TreeItem a)
+--     => Maybe (Diagram B)
+--     -> DrawLeaf
+--     -> Maybe ItemColorMap
+--     -> HC.Dendrogram (V.Vector a)
+--     -> Diagram B
+-- plotDendrogram Nothing drawLeaf cm dend =
+--     pad 1
+--         . center
+--         . dendrogramCustom
+--             Variable
+--             (whichLeaf drawLeaf $ cm)
+--             (dendrogramPathLabel drawLeaf cm)
+--             ((\tree items -> lw 0.3 . scaleToY (3 * height items) $ tree), curry snd)
+--         $ dend
+--   where
+--     whichLeaf DrawText     = dendrogramLeafLabel
+--     whichLeaf (DrawItem _) = dendrogramLeafItem
+-- plotDendrogram (Just legend) drawLeaf cm dend =
+--     pad 1
+--         . hsep 1
+--         $   [ alignT
+--             . center
+--             . dendrogramCustom
+--                 Variable
+--                 (whichLeaf drawLeaf $ cm)
+--                 (dendrogramPathLabel drawLeaf cm)
+--                 ((\tree items -> lw 0.3 . scaleToY (2 * height items) $ tree), curry snd)
+--             $ dend
+--             , pad 2 . alignT . lw 0.3 center . scaleUToY (height tree / 6) $ legend
+--             ]
+--   where
+--     tree = alignT
+--          . center
+--          . dendrogramCustom
+--              Variable
+--              (whichLeaf drawLeaf $ cm)
+--              (dendrogramPathLabel drawLeaf cm)
+--              ((\tree items -> lw 0.1 . scaleToY (3 * height items) $ tree), curry snd)
+--          $ dend
+--     whichLeaf DrawText     = dendrogramLeafLabel
+--     whichLeaf (DrawItem _) = dendrogramLeafItem
 
 -- | Get the most frequent color of a dendrogram.
 getMostFrequentColorDend

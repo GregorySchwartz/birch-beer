@@ -43,7 +43,7 @@ library
                      , graphviz
                      , gtk
                      , hierarchical-clustering
-                     , hierarchical-clustering-diagrams
+                     -- , hierarchical-clustering-diagrams
                      , hierarchical-spectral-clustering
                      , lens
                      , matrix-market-attoparsec
