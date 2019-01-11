@@ -74,6 +74,32 @@ file. For a quick =yaml= configuration, refer to
 [[https://github.com/GregorySchwartz/birch-beer/blob/master/stack.yaml]]. Relies on
 =eigen-3.3.4.1= right now.
 
+*** Docker
+
+Different computers have different setups, operating systems, and repositories.
+Do put the entire program in a container to bypass difficulties (with the other
+methods above), we user =docker=. So first, [[https://docs.docker.com/][install docker]].
+
+To get =birch-beer= (replace 0.1.0.0 with [[https://cloud.docker.com/repository/docker/gregoryschwartz/too-many-cells/general][any version needed]]):
+
+#+BEGIN_SRC sh
+docker pull gregoryschwartz/birch-beer:0.1.0.0
+#+END_SRC
+
+To run =birch-beer= in a docker container:
+
+#+BEGIN_SRC sh
+sudo docker run gregoryschwartz/birch-beer:0.1.0.0 -h
+#+END_SRC
+
+To build the =birch-beer= image yourself if you want:
+
+#+BEGIN_SRC sh
+git clone https://github.com/GregorySchwartz/birch-beer.git
+cd birch-beer
+docker build -t birch-beer -f ./Dockerfile .
+#+END_SRC
+
 * Usage
 
 *For a more detailed look at many of the features*, check out the
