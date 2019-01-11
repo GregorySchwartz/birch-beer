@@ -80,7 +80,7 @@ Different computers have different setups, operating systems, and repositories.
 Do put the entire program in a container to bypass difficulties (with the other
 methods above), we user =docker=. So first, [[https://docs.docker.com/][install docker]].
 
-To get =birch-beer= (replace 0.1.0.0 with [[https://cloud.docker.com/repository/docker/gregoryschwartz/too-many-cells/general][any version needed]]):
+To get =birch-beer= (replace 0.1.0.0 with [[https://cloud.docker.com/repository/docker/gregoryschwartz/birch-beer/general][any version needed]]):
 
 #+BEGIN_SRC sh
 docker pull gregoryschwartz/birch-beer:0.1.0.0
