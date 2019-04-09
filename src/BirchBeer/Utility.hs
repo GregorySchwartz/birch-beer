@@ -20,6 +20,7 @@ module BirchBeer.Utility
     , dendToTree
     , dendrogramToGraph
     , treeToGraph
+    , clusterGraphToTree
     , getGraphLeaves
     , getGraphLeavesCycles
     , getGraphLeavesWithParents
@@ -41,7 +42,7 @@ import Data.List (genericLength, maximumBy, foldl')
 import Data.Maybe (fromMaybe, catMaybes)
 import Data.Monoid ((<>))
 import Data.Tree (Tree (..), flatten)
-import Safe (atMay)
+import Safe (atMay, headMay)
 import qualified Control.Lens as L
 import qualified Data.Clustering.Hierarchical as HC
 import qualified Data.Foldable as F
@@ -196,6 +197,29 @@ treeToGraph =
         modify (L.over L._2 setGr)
 
         return n
+
+-- | Convert a ClusterGraph to a tree, feed in the starting node. Must not
+-- include cycles!
+clusterGraphToTree
+    :: (TreeItem a) => ClusterGraph a -> G.Node -> Tree (TreeNode (V.Vector a))
+clusterGraphToTree (ClusterGraph gr) n | null $ G.suc gr n =
+  Node { rootLabel =
+          TreeNode { _distance = Nothing
+                   , _item = fmap (V.fromList . F.toList)
+                   . join
+                   . fmap snd
+                   . G.lab gr
+                   $ n
+                   }
+       , subForest = []
+       }
+clusterGraphToTree (ClusterGraph gr) n | otherwise =
+  Node { rootLabel =
+          TreeNode { _distance = fmap (L.view L._3) . headMay . G.out gr $ n
+                   , _item = Nothing
+                   }
+       , subForest = fmap (clusterGraphToTree (ClusterGraph gr)) . G.suc gr $ n
+       }
 
 -- | Get leaves of a tree graph given a node. Graph must not include cycles!
 getGraphLeaves :: G.Graph gr => gr a b -> G.Node -> Seq.Seq a

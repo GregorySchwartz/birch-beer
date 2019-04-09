@@ -25,6 +25,7 @@ module BirchBeer.Stopping
     , getProportionDend
     , smartCut
     , smartCutDend
+    , customCut
     ) where
 
 -- Remote
@@ -159,6 +160,16 @@ distanceCut d b =
     if (L.view distance . rootLabel $ b) < Just d
         then b { subForest = fmap branchToLeaf . subForest $ b }
         else b { subForest = fmap (distanceCut d) . subForest $ b }
+
+-- | Cut a graph tree at designated nodes. Using a graph due to node labels.
+-- Must not include cycles!
+customCut :: Set.Set G.Node -> ClusterGraph a -> ClusterGraph a
+customCut ns gr = ClusterGraph . G.gmap pruneNode . unClusterGraph $ gr
+  where
+    pruneNode all@(parents, n, a, children)
+        | Set.member n ns =
+            (parents, n, (n, Just $ getGraphLeafItems gr n), [])
+        | otherwise = all
 
 -- | Get a property about each node in a dendrogram.
 getNodeInfoDend :: (HC.Dendrogram a -> b) -> HC.Dendrogram a -> [b]

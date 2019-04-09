@@ -26,6 +26,7 @@ import qualified Control.Lens as L
 import qualified Data.Aeson as A
 import qualified Data.ByteString.Lazy.Char8 as B
 import qualified Data.Csv as CSV
+import qualified Data.Set as Set
 import qualified Data.Sparse.Common as S
 import qualified Data.Text as T
 import qualified Data.Vector as V
@@ -54,6 +55,7 @@ data Options = Options
     , maxProportion :: Maybe Double <?> "([Nothing] | DOUBLE) Stopping criteria to stop at the node immediate after a node with DOUBLE proportion split. So a node N with L and R children will stop with this criteria at 0.5 if |L| / |R| < 0.5 or > 2 (absolute log2 transformed), that is, if one child has over twice as many items as the other child. Includes L and R in the final result."
     , minDistance :: Maybe Double <?> "([Nothing] | DOUBLE) Stopping criteria to stop at the node immediate after a node with DOUBLE distance. So a node N with L and R children will stop with this criteria the distance at N to L and R is < DOUBLE. Includes L and R in the final result."
     , smartCutoff :: Maybe Double <?> "([Nothing] | DOUBLE) Whether to set the cutoffs for --min-size, --max-proportion, and --min-distance based off of the distributions (median + (DOUBLE * MAD)) of all nodes. To use smart cutoffs, use this argument and then set one of the three arguments to an arbitrary number, whichever cutoff type you want to use. --min-size distribution is log2 transformed."
+    , customCut :: [Int] <?> "([Nothing] | NODE) List of nodes to prune (make these nodes leaves). Invoked by --custom-cut 34 --custom-cut 65 etc."
     , order :: Maybe Double <?> "([1] | DOUBLE) The order of diversity for DrawItem DrawDiversity."
     , drawLeaf :: Maybe String <?> "([DrawText] | DrawItem DrawItemType) How to draw leaves in the dendrogram. DrawText is the number of items in that leaf. DrawItem is the collection of items represented by circles, consisting of: DrawItem DrawLabel, where each item is colored by its label, DrawItem (DrawContinuous FEATURE), where each item is colored by the expression of FEATURE (corresponding to a feature name in the input matrix), DrawItem (DrawThresholdContinuous [(FEATURE, DOUBLE)]), where each item is colored by the binary high / low expression of FEATURE based on DOUBLE and multiple FEATUREs can be used to combinatorically label items (FEATURE1 high / FEATURE2 low, etc.), DrawItem DrawSumContinuous, where each item is colored by the sum of the post-normalized columns (use --normalization NoneNorm for UMI counts, default), and DrawItem DrawDiversity, where each node is colored by the diversity based on the labels of each item and the color is normalized separately for the leaves and the inner nodes. The default is DrawText, unless --labels-file is provided, in which DrawItem DrawLabel is the default. If the label or feature cannot be found, the default color will be black (check your spelling!)."
     , drawCollection :: Maybe String <?> "([PieChart] | PieRing | PieNone | CollectionGraph MAXWEIGHT THRESHOLD [NODE]) How to draw item leaves in the dendrogram. PieRing draws a pie chart ring around the items. PieChart only draws a pie chart instead of items. PieNone only draws items, no pie rings or charts. (CollectionGraph MAXWEIGHT THRESHOLD [NODE]) draws the nodes and edges within leaves that are descendents of NODE (empty list [] indicates draw all leaf networks) based on the input matrix, normalizes edges based on the MAXWEIGHT, and removes edges for display less than THRESHOLD (after normalization, so for CollectionGraph 2 0.5 [26], draw the leaf graphs for all leaves under node 26, then a edge of 0.7 would be removed because (0.7 / 2) < 0.5). For CollectionGraph with no colors, use --draw-leaf \"DrawItem DrawLabel\" and all nodes will be black. If you don't specify this option, DrawText from --draw-leaf overrides this argument and only the number of cells will be plotted."
@@ -73,6 +75,7 @@ data Options = Options
 modifiers :: Modifiers
 modifiers = lispCaseModifiers { shortNameModifier = short }
   where
+    short "customCut"            = Nothing
     short "inputMatrix"          = Just 'X'
     short "minSize"              = Just 'M'
     short "maxStep"              = Just 'S'
@@ -113,6 +116,7 @@ main = do
         maxProportion'    = fmap MaxProportion . unHelpful . maxProportion $ opts
         minDistance'      = fmap MinDistance . unHelpful . minDistance $ opts
         smartCutoff'      = fmap SmartCutoff . unHelpful . smartCutoff $ opts
+        customCut'        = CustomCut . Set.fromList . unHelpful . customCut $ opts
         order'            = fmap Order . unHelpful . order $ opts
         drawLeaf'            =
             maybe
@@ -212,6 +216,7 @@ main = do
                         , _birchMaxProportion       = maxProportion'
                         , _birchMinDistance         = minDistance'
                         , _birchSmartCutoff         = smartCutoff'
+                        , _birchCustomCut           = customCut'
                         , _birchOrder               = order'
                         , _birchDrawLeaf            = drawLeaf'
                         , _birchDrawCollection      = drawCollection'

@@ -100,6 +100,9 @@ newtype MaxProportion = MaxProportion
 newtype MinDistance = MinDistance
     { unMinDistance :: Double
     } deriving (Read,Show)
+newtype CustomCut = CustomCut
+    { unCustomCut :: Set.Set Int
+    } deriving (Read,Show)
 newtype SmartCutoff = SmartCutoff
     { unSmartCutoff :: Double
     } deriving (Read,Show)
@@ -201,6 +204,7 @@ data DrawConfig = DrawConfig
 data Config a b = Config
     { _birchLabelMap            :: Maybe LabelMap
     , _birchSmartCutoff         :: Maybe SmartCutoff
+    , _birchCustomCut           :: CustomCut
     , _birchMinSize             :: Maybe MinClusterSize
     , _birchMaxStep             :: Maybe MaxStep
     , _birchMaxProportion       :: Maybe MaxProportion

@@ -23,6 +23,7 @@ import Text.Read (readMaybe)
 import System.IO.Temp (withTempFile)
 import qualified Control.Lens as L
 import qualified Data.Clustering.Hierarchical as HC
+import qualified Data.Set as Set
 import qualified Data.Text as T
 import qualified Data.Vector as V
 import qualified Diagrams.Backend.Cairo as D
@@ -102,6 +103,7 @@ interactiveDiagram tree labelMap mat simMat = graphicalUI' "birch-beer" $ do
                             , _birchMaxProportion       = Nothing
                             , _birchMinDistance         = Nothing
                             , _birchSmartCutoff         = Nothing
+                            , _birchCustomCut           = CustomCut Set.empty
                             , _birchOrder               = Nothing
                             , _birchDrawLeaf            = drawLeaf'
                             , _birchDrawCollection      = drawCollection'
