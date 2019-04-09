@@ -21,6 +21,7 @@ module BirchBeer.Plot
 -- Remote
 import Control.Monad (forM, mapM, join)
 import Control.Monad.State (State (..))
+import Data.Bool (bool)
 import Data.Colour (AffineSpace (..), withOpacity)
 import Data.Colour.Names (black)
 import Data.Colour.Palette.BrewerSet (brewerSet, ColorCat(..), Kolor)
@@ -438,7 +439,7 @@ drawGraphNode opts@(DrawConfig { _drawLeaf = DrawText }) cm _ _ _ gr (n, Just it
     itemDia = drawGraphLabel cm items
     background = circle 1 # fc white # lw none # scaleUToY scaleVal
     maxLeafNodeSize = unDrawMaxLeafNodeSize . _drawMaxLeafNodeSize $ opts
-    textDia True  = text (show n) # fc black
+    textDia True  = text (show n) # fc (bool black white . isNothing $ cm)
     textDia False = mempty
     dnn = unDrawNodeNumber . _drawNodeNumber $ opts
     scaleVal = if unDrawNoScaleNodesFlag . _drawNoScaleNodesFlag $ opts
@@ -473,7 +474,7 @@ drawGraphNode opts@(DrawConfig { _drawLeaf = (DrawItem drawType) }) cm ncm _ lgd
                 else getScaledLeafSize maxClusterSize' maxLeafNodeSize items
     maxLeafNodeSize = unDrawMaxLeafNodeSize . _drawMaxLeafNodeSize $ opts
     maxClusterSize' = maxClusterSize . unClusterGraph $ gr
-    textDia True  = text (show n) # fc black
+    textDia True  = text (show n) # fc (bool black white . isNothing $ cm)
     textDia False = mempty
     dnn = unDrawNodeNumber . _drawNodeNumber $ opts
 drawGraphNode opts cm ncm mcm _ gr (n, Nothing) pos =
@@ -491,7 +492,7 @@ drawGraphNode opts cm ncm mcm _ gr (n, Nothing) pos =
             # lw 0.4
             # scaleUToY (unDrawMaxNodeSize . _drawMaxNodeSize $ opts)
     dnn = unDrawNodeNumber . _drawNodeNumber $ opts
-    textDia True  = text (show n) # fc black
+    textDia True  = text (show n) # fc (bool black white . isNothing $ cm)
     textDia False = mempty
     rootDiffer 0 = lw none
     rootDiffer n = lw none
