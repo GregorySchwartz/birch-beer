@@ -238,6 +238,10 @@ drawCollectionItem drawCollection (Just (ItemColorMap cm)) _ _ items =
 getItem :: Kolor -> Diagram B
 getItem color = circle 1 # lc black # fc color # lwL 0.1 -- Unfortunately cannot change to lwL or they disappear with certain scalings.
 
+-- | Legend text size.
+legendFontSize :: Double
+legendFontSize = (/ 2.5) $ (def :: Legend B Double) ^. legendSpacing
+
 plotLabelLegend :: LabelColorMap -> Diagram B
 plotLabelLegend = flip (drawLegend emptyBox) legendOpts
                 . fmap plotLabel
@@ -245,16 +249,23 @@ plotLabelLegend = flip (drawLegend emptyBox) legendOpts
                 . unLabelColorMap
   where
     legendOpts :: Legend B Double
-    legendOpts = over legendTextStyle (const (mempty # font "Arial" # fontSize (local size)))
-               . over legendStyle (lw none)
-               $ def
+    legendOpts =
+      over legendTextStyle (const (mempty # font "Arial" # fontSizeL legendFontSize))
+        . over legendStyle (lw none)
+        $ def
     plotLabel :: (Label, Colour Double) -> (Diagram B, String)
     plotLabel (!l, !c) =
-        ( circle size # lc black # fc c # lw (local $ 0.1 * size)
+        ( circle legendFontSize # lc black # fc c # lwL (0.1 * legendFontSize)
         , T.unpack . unLabel $ l
         )
-    size :: Double
-    size = (/ 2.5) $ (def :: Legend B Double) ^. legendSpacing
+
+-- | Continous style of color bar.
+cbOpts :: ColourBar B Double
+cbOpts = over colourBarStyle (lwL (0.2 * legendFontSize))
+       . set majorTicksAlignment insideTicks
+       . over tickLabelStyle (font "Arial" # fontSizeL legendFontSize)
+       . set visible True
+       $ defColourBar
 
 -- | Get the legend for a feature. Bar from
 -- https://archives.haskell.org/projects.haskell.org/diagrams/blog/2013-12-03-Palette1.html
@@ -265,15 +276,21 @@ plotContinuousLegend :: (MatrixLike a)
                      -> a
                      -> Diagram B
 plotContinuousLegend customColors sat g mat
-    | isNothing col = mempty
-    | otherwise = rotateBy (3 / 4)
+        | isNothing col = mempty
+        | otherwise = vsep
+                (legendFontSize * 1.2)
+                [ text (T.unpack . unFeature $ g)
+                # font "Arial"
+                # fontSizeL legendFontSize
+                , rotateBy (3 / 4)
+                . lwL (0.2 * legendFontSize)  -- For the ticks
                 $ renderColourBar
-                    cbOpts cm (fromMaybe 0 minVal, fromMaybe 0 maxVal) 100
-  where
-    cbOpts :: ColourBar B Double
-    cbOpts = over tickLabelStyle (font "Arial")
-           . set visible True
-           $ defColourBar
+                    cbOpts
+                    cm
+                    (fromMaybe 0 minVal, fromMaybe 0 maxVal)
+                    100
+                ]
+    where
     cm = colourMap
        . zip [1..]
        . fmap (\x -> saturateColor sat $ blend x highColor lowColor)
@@ -296,24 +313,33 @@ plotSumContinuousLegend :: (MatrixLike a)
                         -> DrawScaleSaturation
                         -> a
                         -> Diagram B
-plotSumContinuousLegend customColors sat mat =
-    rotateBy (3 / 4)
-        $ renderColourBar cbOpts cm (fromMaybe 0 minVal, fromMaybe 0 maxVal) 100
-  where
-    cbOpts :: ColourBar B Double
-    cbOpts = over tickLabelStyle (font "Arial")
-           . set visible True
-           $ defColourBar
-    cm = colourMap
-       . zip [1..]
-       . fmap (\x -> saturateColor sat $ blend x highColor lowColor)
-       $ [0,0.1..1]
-    (minVal, maxVal) = Fold.fold ((,) <$> Fold.minimum <*> Fold.maximum)
-                     . fmap sum
-                     . S.toRowsL
-                     . getMatrix
-                     $ mat
-    (highColor, lowColor) = getHighLowColors customColors
+plotSumContinuousLegend customColors sat mat = vsep
+        (legendFontSize * 1.2)
+        [ text "Total Sum" # font "Arial" # fontSizeL legendFontSize
+        , rotateBy (3 / 4)
+        . lwL (0.2 * legendFontSize)  -- For the ticks
+        $ renderColourBar
+            cbOpts
+            cm
+            (fromMaybe 0 minVal, fromMaybe 0 maxVal)
+            100
+        ]
+    where
+        cm =
+                colourMap
+                        . zip [1 ..]
+                        . fmap
+                                  (\x -> saturateColor sat
+                                          $ blend x highColor lowColor
+                                  )
+                        $ [0, 0.1 .. 1]
+        (minVal, maxVal) =
+                Fold.fold ((,) <$> Fold.minimum <*> Fold.maximum)
+                        . fmap sum
+                        . S.toRowsL
+                        . getMatrix
+                        $ mat
+        (highColor, lowColor) = getHighLowColors customColors
 
 -- | Get the maximum cluster size from a graph.
 maxClusterSize :: G.Gr (G.Node, Maybe (Seq.Seq a)) e -> Int
@@ -431,7 +457,7 @@ drawGraphNode :: (TreeItem a)
               -> P2 Double
               -> Diagram B
 drawGraphNode opts@(DrawConfig { _drawLeaf = DrawText }) cm _ _ _ gr (n, Just items) pos =
-    ((textDia dnn # fontSize (local $ smallestAxis dia)) <> dia <> background)
+    ((textDia dnn # fontSizeL (smallestAxis dia)) <> dia <> background)
         # scaleUToX scaleVal
         # moveTo pos
   where
@@ -447,7 +473,7 @@ drawGraphNode opts@(DrawConfig { _drawLeaf = DrawText }) cm _ _ _ gr (n, Just it
                 else getScaledLeafSize maxClusterSize' maxLeafNodeSize items
     maxClusterSize' = maxClusterSize . unClusterGraph $ gr
 drawGraphNode opts@(DrawConfig { _drawLeaf = (DrawItem drawType) }) cm ncm _ lgdm gr (n, Just items) pos =
-    ((textDia dnn # fontSize (local $ smallestAxis dia)) <> dia) # moveTo pos
+    ((textDia dnn # fontSizeL (smallestAxis dia)) <> dia) # moveTo pos
   where
     dia = drawLeafDia drawType
     drawLeafDia DrawDiversity =
@@ -480,7 +506,7 @@ drawGraphNode opts@(DrawConfig { _drawLeaf = (DrawItem drawType) }) cm ncm _ lgd
 drawGraphNode opts cm ncm mcm _ gr (n, Nothing) pos =
     (mark mcm <> mainNode) # moveTo pos
   where
-    mainNode = ((textDia dnn # fontSize (local $ 1)) <> mainDia)
+    mainNode = ((textDia dnn # fontSizeL 1) <> mainDia)
              # scaleUToY (getNodeSize (_drawNoScaleNodesFlag opts) items)
     mainDia = circle 1 # fc color # rootDiffer n
     mark :: Maybe MarkColorMap -> Diagram B
