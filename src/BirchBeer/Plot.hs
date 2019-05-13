@@ -261,9 +261,12 @@ plotLabelLegend = flip (drawLegend emptyBox) legendOpts
 
 -- | Continous style of color bar.
 cbOpts :: ColourBar B Double
-cbOpts = over colourBarStyle (lwL (0.2 * legendFontSize))
+cbOpts = over tickLabelStyle (font "Arial" # fontSizeL legendFontSize)
+       . over colourBarStyle (lwL (0.2 * legendFontSize))
+       . set majorTicksStyle (mempty # lwL (0.2 * legendFontSize))
+       . set (minorTicks . visible) False
+       . set (majorGridLines . visible) False
        . set majorTicksAlignment insideTicks
-       . over tickLabelStyle (font "Arial" # fontSizeL legendFontSize)
        . set visible True
        $ defColourBar
 
@@ -283,7 +286,6 @@ plotContinuousLegend customColors sat g mat
                 # font "Arial"
                 # fontSizeL legendFontSize
                 , rotateBy (3 / 4)
-                . lwL (0.2 * legendFontSize)  -- For the ticks
                 $ renderColourBar
                     cbOpts
                     cm
@@ -317,7 +319,6 @@ plotSumContinuousLegend customColors sat mat = vsep
         (legendFontSize * 1.2)
         [ text "Total Sum" # font "Arial" # fontSizeL legendFontSize
         , rotateBy (3 / 4)
-        . lwL (0.2 * legendFontSize)  -- For the ticks
         $ renderColourBar
             cbOpts
             cm
