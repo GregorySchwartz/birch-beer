@@ -180,7 +180,7 @@ data (MatrixLike a) => SimMatrix a = SimilarityMatrix a | B2Matrix a
 -- Advanced
 data DrawItemType
     = DrawLabel
-    | DrawContinuous T.Text
+    | DrawContinuous [T.Text]
     | DrawThresholdContinuous [(T.Text, Double)]
     | DrawSumContinuous
     | DrawDiversity

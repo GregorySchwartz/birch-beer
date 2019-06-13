@@ -17,6 +17,7 @@ module BirchBeer.ColorMap
     , labelToItemColorMap
     , getItemColorMapContinuous
     , getItemColorMapSumContinuous
+    , getCombinedFeatures
     , getMarkColorMap
     , getNodeColorMapFromItems
     , getNodeColorMapFromDiversity
@@ -187,27 +188,45 @@ getContinuousColor highColor lowColor =
   where
     getExist = fromMaybe (error "Feature does not exist or no cells found.")
 
--- | Get the colors of each item, where the color is determined by features.
+-- | Get the colors of each item, where the color is determined by the average
+-- of features.
 getItemColorMapContinuous
     :: (MatrixLike a)
-    => Maybe CustomColors -> Feature -> a -> ItemColorMap
-getItemColorMapContinuous customColors g mat
-    | isNothing col = ItemColorMap Map.empty
-    | otherwise = ItemColorMap
-                . Map.fromList
-                . zip (fmap Id . V.toList . getRowNames $ mat)
-                . getContinuousColor highColor lowColor
-                . S.toDenseListSV
-                . flip S.extractCol (colErr col)
-                . getMatrix
-                $ mat
+    => Maybe CustomColors -> [Feature] -> a -> Either String ItemColorMap
+getItemColorMapContinuous customColors gs mat =
+  fmap ( ItemColorMap
+       . Map.fromList
+       . zip (fmap Id . V.toList . getRowNames $ mat)
+       . getContinuousColor highColor lowColor
+       )
+    . getCombinedFeatures gs
+    $ mat
   where
-    colErr = fromMaybe (error $ "Feature " <> T.unpack (unFeature g) <> " does not exist.")
-    col = V.elemIndex g
-        . fmap Feature
-        . getColNames
-        $ mat
     (highColor, lowColor) = getHighLowColors customColors
+
+-- | For items with several needed features, combine together by averages.
+getCombinedFeatures :: (MatrixLike a)
+                    => [Feature]
+                    -> a
+                    -> Either String [Double]
+getCombinedFeatures gs mat
+    | V.length cols < truncate n = Left
+                        $ "One of the features in "
+                       <> (show . fmap unFeature $ gs)
+                       <> " does not exist."
+    | otherwise = Right
+                . fmap ((/ n) . sum)
+                . S.toRowsL
+                . S.fromColsV
+                . fmap (S.extractCol (getMatrix mat))
+                $ cols
+  where
+    cols = V.findIndices (flip Set.member gsSet)
+         . fmap Feature
+         . getColNames
+         $ mat
+    gsSet = Set.fromList gs
+    n = fromIntegral $ Set.size gsSet
 
 -- | Get the labels of each item, where the label is determined by a binary high
 -- / low features determined by a threshold. Multiple features can be used

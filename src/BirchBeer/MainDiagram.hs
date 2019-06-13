@@ -18,6 +18,7 @@ import Data.Tree (Tree (..))
 import qualified Control.Lens as L
 import qualified Data.Clustering.Hierarchical as HC
 import qualified Data.Foldable as F
+import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import qualified Data.Text as T
 import qualified Data.Vector as V
@@ -131,7 +132,12 @@ mainDiagram config = do
         case drawLeaf' of
             DrawItem (DrawContinuous x) ->
                 fmap
-                    (fmap (getItemColorMapContinuous drawColors' (Feature x)))
+                    ( fmap ( either (const (ItemColorMap Map.empty)) id
+                           . getItemColorMapContinuous
+                              drawColors'
+                              (fmap Feature x)
+                           )
+                    )
                     mat
             DrawItem DrawSumContinuous  ->
                 fmap (fmap (getItemColorMapSumContinuous drawColors')) mat
@@ -180,7 +186,7 @@ mainDiagram config = do
                         ( fmap ( plotContinuousLegend
                                   drawColors'
                                   (fromMaybe (DrawScaleSaturation 1) drawScaleSaturation')
-                                  (Feature x)
+                                  (fmap Feature x)
                                )
                         )
                         mat

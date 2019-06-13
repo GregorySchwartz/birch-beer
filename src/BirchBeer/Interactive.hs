@@ -16,7 +16,7 @@ module BirchBeer.Interactive
 -- Remote
 import Data.Bool (bool)
 import Data.Colour.SRGB (sRGB24reads)
-import Data.Maybe (catMaybes)
+import Data.Maybe (catMaybes, fromMaybe)
 import Data.Tree (Tree (..))
 import Safe (headMay)
 import Text.Read (readMaybe)
@@ -56,10 +56,10 @@ interactiveDiagram tree labelMap mat simMat = graphicalUI' "birch-beer" $ do
                         DrawText
                         [ DrawItem DrawLabel
                         , DrawItem DrawSumContinuous
-                        , DrawItem (DrawContinuous "GENE")
+                        , DrawItem (DrawContinuous ["GENE"])
                         , DrawItem DrawDiversity
                         ]
-    drawContinuousGene' <- TS.entry "GENE for DrawItem DrawContinuous"
+    drawContinuousGene' <- TS.entry "[GENE] for DrawItem DrawContinuous"
     drawCollection' <-
         TS.radioButton "Leaf shape" PieChart [PieRing, PieNone, CollectionGraph 1 0 []]
     drawMark' <- TS.radioButton "Node mark" MarkNone [MarkModularity]
@@ -95,7 +95,7 @@ interactiveDiagram tree labelMap mat simMat = graphicalUI' "birch-beer" $ do
     return $
         let drawLeaf' = case drawLeafTemp of
                             DrawItem (DrawContinuous _) ->
-                                DrawItem (DrawContinuous drawContinuousGene')
+                                DrawItem (DrawContinuous (fromMaybe [] $ readMaybe (T.unpack drawContinuousGene') :: [T.Text]))
                             x -> x
             config = Config { _birchLabelMap            = labelMap
                             , _birchMinSize             = Just minSize'

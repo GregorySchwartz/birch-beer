@@ -27,6 +27,7 @@ import Data.Colour.Names (black)
 import Data.Colour.Palette.BrewerSet (brewerSet, ColorCat(..), Kolor)
 import qualified Data.Colour.Palette.BrewerSet as Brewer
 import Data.Colour.SRGB (RGB (..), toSRGB)
+import Data.Either (isLeft, isRight)
 import Data.Function (on)
 import Data.List (nub, sort, sortBy, foldl1', transpose)
 import Data.Maybe (fromMaybe, isNothing)
@@ -275,38 +276,31 @@ cbOpts = over tickLabelStyle (font "Arial" # fontSizeL legendFontSize)
 plotContinuousLegend :: (MatrixLike a)
                      => Maybe CustomColors
                      -> DrawScaleSaturation
-                     -> Feature
+                     -> [Feature]
                      -> a
                      -> Diagram B
-plotContinuousLegend customColors sat g mat
-        | isNothing col = mempty
-        | otherwise = vsep
-                (legendFontSize * 1.2)
-                [ text (T.unpack . unFeature $ g)
-                # font "Arial"
-                # fontSizeL legendFontSize
-                , rotateBy (3 / 4)
-                $ renderColourBar
-                    cbOpts
-                    cm
-                    (fromMaybe 0 minVal, fromMaybe 0 maxVal)
-                    100
-                ]
-    where
-    cm = colourMap
-       . zip [1..]
-       . fmap (\x -> saturateColor sat $ blend x highColor lowColor)
-       $ [0,0.1..1]
-    (minVal, maxVal) = Fold.fold ((,) <$> Fold.minimum <*> Fold.maximum)
-                     . flip S.extractCol (colErr col)
-                     . getMatrix
-                     $ mat
-    colErr = fromMaybe (error $ "Feature " <> T.unpack (unFeature g) <> " does not exist.")
-    col = V.elemIndex g
-        . fmap Feature
-        . getColNames
-        $ mat
-    (highColor, lowColor) = getHighLowColors customColors
+plotContinuousLegend customColors sat gs mat =
+    either text dia $ getCombinedFeatures gs $ mat
+  where
+    dia fs = vsep
+               (legendFontSize * 1.2)
+               [ text (T.unpack . T.intercalate " " . fmap unFeature $ gs)
+               # font "Arial"
+               # fontSizeL legendFontSize
+               , rotateBy (3 / 4)
+               $ renderColourBar
+                   cbOpts
+                   cm
+                   (fromMaybe 0 minVal, fromMaybe 0 maxVal)
+                   100
+               ]
+      where
+        (minVal, maxVal) = Fold.fold ((,) <$> Fold.minimum <*> Fold.maximum) fs
+        cm = colourMap
+          . zip [1..]
+          . fmap (\x -> saturateColor sat $ blend x highColor lowColor)
+          $ [0,0.1..1]
+        (highColor, lowColor) = getHighLowColors customColors
 
 -- | Get the legend for the sum of all features. Bar from
 -- https://archives.haskell.org/projects.haskell.org/diagrams/blog/2013-12-03-Palette1.html
