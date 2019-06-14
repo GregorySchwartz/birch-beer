@@ -5,6 +5,7 @@ Collects helper functions in the program.
 -}
 
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE TupleSections #-}
 
 module BirchBeer.Utility
@@ -31,6 +32,7 @@ module BirchBeer.Utility
     , median
     , subsetLabelColorMap
     , getHighLowColors
+    , closestColor
     ) where
 
 -- Remote
@@ -38,7 +40,7 @@ import Control.Monad (join)
 import Control.Monad.State (MonadState (..), State (..), evalState, execState, modify)
 import Data.Function (on)
 import Data.Int (Int32)
-import Data.List (genericLength, maximumBy, foldl')
+import Data.List (genericLength, maximumBy, minimumBy, foldl')
 import Data.Maybe (fromMaybe, catMaybes)
 import Data.Monoid ((<>))
 import Data.Tree (Tree (..), flatten)
@@ -320,3 +322,19 @@ getHighLowColors customColors = (highColor, lowColor)
     highColor = fromMaybe D.red $ customColors >>= flip atMay 0 . unCustomColors
     lowColor  = fromMaybe (D.blend 0.2 D.black D.white)
               $ customColors >>= flip atMay 1 . unCustomColors
+
+-- | Find the closest color from a list.
+closestColor :: [D.Colour Double] -> D.Colour Double -> D.Colour Double
+closestColor cs c = minimumBy (compare `on` colorDist c) cs
+
+-- | Get the distance between two colors.
+colorDist :: D.Colour Double -> D.Colour Double -> Double
+colorDist c1 = euclideanDist (colorToList c1) . colorToList
+
+-- | Convert color values to a list.
+colorToList :: D.Colour Double -> [Double]
+colorToList (D.toSRGB -> D.RGB r g b) =  [r, g, b]
+
+-- | Euclidean distance between two lists.
+euclideanDist :: [Double] -> [Double] -> Double
+euclideanDist xs = sqrt . sum . zipWith (\x y -> (x - y) ** 2) xs

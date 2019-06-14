@@ -78,6 +78,7 @@ mainDiagram config = do
         drawLegendSep'    = _birchDrawLegendSep config
         drawPalette'      = _birchDrawPalette config
         drawColors'       = _birchDrawColors config
+        drawDiscretize'   = _birchDrawDiscretize config
         drawScaleSaturation' = _birchDrawScaleSaturation config
         order'            = fromMaybe (Order 1) $ _birchOrder config
         mat               = return $ _birchMat config
@@ -126,6 +127,16 @@ mainDiagram config = do
             lcm <- labelColorMapRaw
             lm  <- labelMap'
             return $ labelToItemColorMap lcm lm
+        -- | Get the discrete color list.
+        discreteColors = drawDiscretize'
+                     >>= getDiscreteColorMap drawLeaf' drawColors' labelColorMap
+        -- | This function will decide whether to update a map or not based on
+        -- user input.
+        discretizeColorMapHelper :: (Eq a, Ord a)
+                                 => Map.Map a (D.Colour Double)
+                                 -> Map.Map a (D.Colour Double)
+        discretizeColorMapHelper cm =
+          maybe cm (flip discretizeColorMap cm) discreteColors
 
     -- | Get the item color map.
     itemColorMapRaw <-
@@ -144,11 +155,18 @@ mainDiagram config = do
             _                           -> return defaultGetItemColorMap
 
     -- | Get the node color map.
-    let itemColorMap = fmap
-                        (maybe id saturateItemColorMap drawScaleSaturation')
+    let itemColorMap = fmap ( ItemColorMap
+                            . discretizeColorMapHelper
+                            . unItemColorMap
+                            . (maybe id saturateItemColorMap drawScaleSaturation')
+                            )
                         itemColorMapRaw
         nodeColorMap =
-          fmap (maybe id saturateNodeColorMap drawScaleSaturation') $
+          fmap ( NodeColorMap
+               . discretizeColorMapHelper
+               . unNodeColorMap
+               . maybe id saturateNodeColorMap drawScaleSaturation'
+               ) $
             case drawLeaf' of
                 (DrawItem DrawDiversity) ->
                     fmap
@@ -185,6 +203,7 @@ mainDiagram config = do
                     fmap
                         ( fmap ( plotContinuousLegend
                                   drawColors'
+                                  discreteColors
                                   (fromMaybe (DrawScaleSaturation 1) drawScaleSaturation')
                                   (fmap Feature x)
                                )
@@ -195,6 +214,7 @@ mainDiagram config = do
                       ( fmap
                           ( plotSumContinuousLegend
                             drawColors'
+                            discreteColors
                             (fromMaybe (DrawScaleSaturation 1) drawScaleSaturation')
                           )
                       )

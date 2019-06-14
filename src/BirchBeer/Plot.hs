@@ -261,25 +261,32 @@ plotLabelLegend = flip (drawLegend emptyBox) legendOpts
         )
 
 -- | Continous style of color bar.
-cbOpts :: ColourBar B Double
-cbOpts = over tickLabelStyle (font "Arial" # fontSizeL legendFontSize)
-       . over colourBarStyle (lwL (0.2 * legendFontSize))
-       . set majorTicksStyle (mempty # lwL (0.2 * legendFontSize))
-       . set (minorTicks . visible) False
-       . set (majorGridLines . visible) False
-       . set majorTicksAlignment insideTicks
-       . set visible True
-       $ defColourBar
+cbOpts :: Maybe DiscreteColorMap -> ColourBar B Double
+cbOpts discreteColors =
+  over tickLabelStyle (font "Arial" # fontSizeL legendFontSize)
+    . over colourBarStyle (lwL (0.2 * legendFontSize))
+    . set majorTicksStyle (mempty # lwL (0.2 * legendFontSize))
+    . set (minorTicks . visible) False
+    . set (majorGridLines . visible) False
+    . set majorTicksAlignment insideTicks
+    . set visible True
+    . (\ x -> maybe x (\ (DiscreteColorMap y)
+                      -> set colourBarDraw (pathColourBar (length y)) x
+                      )
+              discreteColors
+      )
+    $ defColourBar
 
 -- | Get the legend for a feature. Bar from
 -- https://archives.haskell.org/projects.haskell.org/diagrams/blog/2013-12-03-Palette1.html
 plotContinuousLegend :: (MatrixLike a)
                      => Maybe CustomColors
+                     -> Maybe DiscreteColorMap
                      -> DrawScaleSaturation
                      -> [Feature]
                      -> a
                      -> Diagram B
-plotContinuousLegend customColors sat gs mat =
+plotContinuousLegend customColors discreteColors sat gs mat =
     either text dia $ getCombinedFeatures gs $ mat
   where
     dia fs = vsep
@@ -289,51 +296,54 @@ plotContinuousLegend customColors sat gs mat =
                # fontSizeL legendFontSize
                , rotateBy (3 / 4)
                $ renderColourBar
-                   cbOpts
+                   (cbOpts discreteColors)
                    cm
                    (fromMaybe 0 minVal, fromMaybe 0 maxVal)
                    100
                ]
       where
         (minVal, maxVal) = Fold.fold ((,) <$> Fold.minimum <*> Fold.maximum) fs
-        cm = colourMap
-          . zip [1..]
-          . fmap (\x -> saturateColor sat $ blend x highColor lowColor)
-          $ [0,0.1..1]
+        cm = fromMaybe normalCm discreteCm
+        discreteCm =
+          fmap (colourMap . zip [1..] . unDiscreteColorMap) $ discreteColors
+        normalCm = colourMap
+           . zip [1..]
+           . fmap (\x -> saturateColor sat $ blend x highColor lowColor)
+           $ [0,0.1..1]
         (highColor, lowColor) = getHighLowColors customColors
 
 -- | Get the legend for the sum of all features. Bar from
 -- https://archives.haskell.org/projects.haskell.org/diagrams/blog/2013-12-03-Palette1.html
 plotSumContinuousLegend :: (MatrixLike a)
                         => Maybe CustomColors
+                        -> Maybe DiscreteColorMap
                         -> DrawScaleSaturation
                         -> a
                         -> Diagram B
-plotSumContinuousLegend customColors sat mat = vsep
+plotSumContinuousLegend customColors discreteColors sat mat = vsep
         (legendFontSize * 1.2)
         [ text "Total Sum" # font "Arial" # fontSizeL legendFontSize
         , rotateBy (3 / 4)
         $ renderColourBar
-            cbOpts
+            (cbOpts discreteColors)
             cm
             (fromMaybe 0 minVal, fromMaybe 0 maxVal)
             100
         ]
     where
-        cm =
-                colourMap
-                        . zip [1 ..]
-                        . fmap
-                                  (\x -> saturateColor sat
-                                          $ blend x highColor lowColor
-                                  )
-                        $ [0, 0.1 .. 1]
-        (minVal, maxVal) =
-                Fold.fold ((,) <$> Fold.minimum <*> Fold.maximum)
-                        . fmap sum
-                        . S.toRowsL
-                        . getMatrix
-                        $ mat
+        cm = fromMaybe normalCm discreteCm
+        discreteCm =
+          fmap (colourMap . zip [1..] . unDiscreteColorMap) $ discreteColors
+        normalCm =
+          colourMap
+            . zip [1 ..]
+            . fmap (\x -> saturateColor sat $ blend x highColor lowColor)
+            $ [0, 0.1 .. 1]
+        (minVal, maxVal) = Fold.fold ((,) <$> Fold.minimum <*> Fold.maximum)
+                         . fmap sum
+                         . S.toRowsL
+                         . getMatrix
+                         $ mat
         (highColor, lowColor) = getHighLowColors customColors
 
 -- | Get the maximum cluster size from a graph.

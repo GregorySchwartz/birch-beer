@@ -27,6 +27,8 @@ module BirchBeer.ColorMap
     , saturateNodeColorMap
     , saturateItemColorMap
     , saturateLabelColorMap
+    , getDiscreteColorMap
+    , discretizeColorMap
     ) where
 
 -- Remote
@@ -380,4 +382,29 @@ saturateItemColorMap x = ItemColorMap . fmap (saturateColor x) . unItemColorMap
 -- | Saturate the label color map by multiplying the saturation in the HSV model
 -- by a specified amount.
 saturateLabelColorMap :: DrawScaleSaturation -> LabelColorMap -> LabelColorMap
-saturateLabelColorMap x = LabelColorMap . fmap (saturateColor x) . unLabelColorMap
+saturateLabelColorMap x =
+  LabelColorMap . fmap (saturateColor x) . unLabelColorMap
+
+-- | Get the color map list from user input, either the list itself or a way to
+-- segment the current color scheme.
+getDiscreteColorMap :: DrawLeaf
+                    -> Maybe CustomColors
+                    -> Maybe LabelColorMap
+                    -> DrawDiscretize
+                    -> Maybe DiscreteColorMap
+getDiscreteColorMap DrawText _ _ _ = Nothing
+getDiscreteColorMap _ _ _ (CustomColorMap cs) = Just $ DiscreteColorMap cs
+getDiscreteColorMap (DrawItem DrawLabel) _ (Just (LabelColorMap cm)) (SegmentColorMap i) =
+  Just . DiscreteColorMap . (\xs -> if Set.size xs <= i then Set.toAscList xs else interpColors i . Set.toAscList $ xs) . Set.fromList . Map.elems $ cm
+getDiscreteColorMap (DrawItem (DrawThresholdContinuous _)) _ (Just (LabelColorMap cm)) (SegmentColorMap i) =
+  Just . DiscreteColorMap . (\xs -> if Set.size xs <= i then Set.toAscList xs else interpColors i . Set.toAscList $ xs) . Set.fromList . Map.elems $ cm
+getDiscreteColorMap _ customColors _ (SegmentColorMap i) =
+  Just . DiscreteColorMap $ interpColors i [lowColor, highColor]
+  where
+    (highColor, lowColor) = getHighLowColors customColors
+
+-- | Discretize color map by converting color to closest color in list.
+discretizeColorMap :: (Eq a, Ord a) => DiscreteColorMap
+                                    -> Map.Map a (Colour Double)
+                                    -> Map.Map a (Colour Double)
+discretizeColorMap (DiscreteColorMap cs) = fmap (closestColor cs)

@@ -169,6 +169,9 @@ newtype LeafGraphDiaMap = LeafGraphDiaMap
 newtype CustomColors = CustomColors
     { unCustomColors :: [Kolor]
     } deriving (Read, Show)
+newtype DiscreteColorMap = DiscreteColorMap
+    { unDiscreteColorMap :: [Kolor]
+    } deriving (Read, Show)
 newtype L = L Double
 newtype C = C Double
 newtype H = H Double
@@ -190,6 +193,8 @@ data DrawCollection = CollectionGraph Double Double [Int] | PieRing | PieChart |
 data DrawNodeMark   = MarkModularity | MarkNone deriving (Read, Show)
 
 data Palette = Set1 | Ryb | Hsv | Hcl deriving (Read, Show)
+data DrawDiscretize = CustomColorMap [Kolor] | SegmentColorMap Int
+                      deriving (Read, Show)
 
 data DrawConfig = DrawConfig
     { _drawLeaf             :: DrawLeaf
@@ -221,6 +226,7 @@ data Config a b = Config
     , _birchDrawLegendSep       :: DrawLegendSep
     , _birchDrawPalette         :: Palette
     , _birchDrawColors          :: Maybe CustomColors
+    , _birchDrawDiscretize      :: Maybe DrawDiscretize
     , _birchDrawScaleSaturation :: Maybe DrawScaleSaturation
     , _birchTree                :: Tree (TreeNode (V.Vector a))
     , _birchMat                 :: Maybe b
