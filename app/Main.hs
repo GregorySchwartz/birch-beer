@@ -81,7 +81,7 @@ modifiers = lispCaseModifiers { shortNameModifier = short }
     short "minSize"              = Just 'M'
     short "maxStep"              = Just 'S'
     short "maxProportion"        = Just 'P'
-    short "maxDistance"          = Just 'T'
+    short "minDistance"          = Just 'T'
     short "drawLeaf"             = Just 'L'
     short "drawCollection"       = Just 'D'
     short "drawDiscretize"       = Nothing
