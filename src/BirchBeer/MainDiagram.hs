@@ -67,6 +67,11 @@ mainDiagram config = do
                 (Just x, Just _)   ->
                     Just . MinDistance $ smartCut x getDistance tree
                 otherwise          -> _birchMinDistance config
+        minDistanceSearch'      =
+            case (fmap unSmartCutoff smartCutoff', _birchMinDistanceSearch config) of
+                (Just x, Just _)   ->
+                    Just . MinDistanceSearch $ smartCut x getDistance tree
+                otherwise          -> _birchMinDistanceSearch config
         drawLeaf'         = _birchDrawLeaf config
         drawCollection'   = _birchDrawCollection config
         drawMark'         = _birchDrawMark config
@@ -94,6 +99,7 @@ mainDiagram config = do
                   )
                 , (\x -> maybe x (flip proportionCut x . unMaxProportion) maxProportion')
                 , (\x -> maybe x (flip distanceCut x . unMinDistance) minDistance')
+                , (\x -> maybe x (flip distanceSearchCut x . unMinDistanceSearch) minDistanceSearch')
                 , (\x -> maybe x (flip sizeCut x . unMinClusterSize) minSize')
                 , (\x -> maybe x (flip stepCut x . unMaxStep) maxStep')
                 ]

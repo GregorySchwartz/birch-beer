@@ -17,6 +17,7 @@ module BirchBeer.Stopping
     , proportionCutDendrogram
     , distanceCut
     , distanceCutDendrogram
+    , distanceSearchCut
     , getSize
     , getSizeDend
     , getDistance
@@ -26,18 +27,21 @@ module BirchBeer.Stopping
     , smartCut
     , smartCutDend
     , customCut
+    , searchCut
     ) where
 
 -- Remote
 import Control.Monad.State (MonadState (..), State (..), evalState, execState, modify)
 import Data.Function (on)
 import Data.Int (Int32)
-import Data.List (genericLength, maximumBy)
-import Data.Maybe (fromMaybe, catMaybes)
+import Data.List (genericLength, maximumBy, tails)
+import Data.Maybe (catMaybes, fromMaybe)
 import Data.Monoid ((<>))
 import Data.Tree (Tree (..), flatten)
+import Safe (headMay)
 import qualified Control.Lens as L
 import qualified Data.Clustering.Hierarchical as HC
+import qualified Data.Foldable as F
 import qualified Data.Graph.Inductive as G
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
@@ -125,7 +129,7 @@ proportionCut _ b@(all isLeaf . subForest -> True) = b
 proportionCut n b@(Node { subForest = xs }) =
     if (absLog2 $ (maximum . fmap getSize $ xs) / (minimum . fmap getSize $ xs))
        > absLog2 n
-        then b { subForest = fmap branchToLeaf xs }
+        then branchToLeaf b
         else b { subForest = fmap (proportionCut n) xs }
 
 -- | Cut a dendrogram based off of the distance, keeping up to and including the
@@ -158,8 +162,26 @@ distanceCut _ b@(Node { subForest = [] }) = b
 distanceCut _ b@(all isLeaf . subForest -> True) = b
 distanceCut d b =
     if (L.view distance . rootLabel $ b) < Just d
-        then b { subForest = fmap branchToLeaf . subForest $ b }
+        then branchToLeaf b
         else b { subForest = fmap (distanceCut d) . subForest $ b }
+
+-- | Get tree ignoring paths to nodes with designated distance or higher (and
+-- children) and cutting the rest. This returns the tree.
+distanceSearchCut :: (Semigroup a)
+                  => Double
+                  -> Tree (TreeNode a)
+                  -> Tree (TreeNode a)
+distanceSearchCut d = searchCut (maybe False (>= d) . L.view distance) False
+
+-- | Get tree ignoring paths to nodes with designated distance or higher (and
+-- children) and cutting the rest. This returns the appropriate set of nodes to
+-- cut. Ignored in favor of searchCut.
+distanceSearchCutNodes :: Double -> ClusterGraph a -> Set.Set G.Node
+distanceSearchCutNodes d = Set.fromList
+                         . concatMap (\(!x, !y, _) -> [x, y])
+                         . filter ((>= d) . L.view L._3)
+                         . G.labEdges
+                         . unClusterGraph
 
 -- | Cut a graph tree at designated nodes. Using a graph due to node labels.
 -- Must not include cycles!
@@ -170,6 +192,19 @@ customCut ns gr = ClusterGraph . G.gmap pruneNode . unClusterGraph $ gr
         | Set.member n ns =
             (parents, n, (n, Just $ getGraphLeafItems gr n), [])
         | otherwise = all
+
+-- | Keep all paths containing valid nodes (and possibly children) from root to
+-- that node.
+searchCut :: (Semigroup a)
+          => (TreeNode a -> Bool)
+          -> Bool
+          -> Tree (TreeNode a)
+          -> Tree (TreeNode a)
+searchCut f keepChildren b
+  | any f . flatten $ b =
+      b { subForest = fmap (searchCut f keepChildren) . subForest $ b }
+  | keepChildren        = b { subForest = fmap branchToLeaf . subForest $ b }
+  | otherwise           = branchToLeaf b
 
 -- | Get a property about each node in a dendrogram.
 getNodeInfoDend :: (HC.Dendrogram a -> b) -> HC.Dendrogram a -> [b]

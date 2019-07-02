@@ -100,6 +100,9 @@ newtype MaxProportion = MaxProportion
 newtype MinDistance = MinDistance
     { unMinDistance :: Double
     } deriving (Read,Show)
+newtype MinDistanceSearch = MinDistanceSearch
+    { unMinDistanceSearch :: Double
+    } deriving (Read,Show)
 newtype CustomCut = CustomCut
     { unCustomCut :: Set.Set Int
     } deriving (Read,Show)
@@ -214,6 +217,7 @@ data Config a b = Config
     , _birchMaxStep             :: Maybe MaxStep
     , _birchMaxProportion       :: Maybe MaxProportion
     , _birchMinDistance         :: Maybe MinDistance
+    , _birchMinDistanceSearch   :: Maybe MinDistanceSearch
     , _birchOrder               :: Maybe Order
     , _birchDrawLeaf            :: DrawLeaf
     , _birchDrawCollection      :: DrawCollection
