@@ -31,6 +31,7 @@ import qualified Data.Aeson.TH as A
 import qualified Data.Aeson.Types as A
 import qualified Data.Clustering.Hierarchical as HC
 import qualified Data.Graph.Inductive as G
+import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Sparse.Common as S
@@ -256,3 +257,9 @@ instance (Semigroup a) => Semigroup (TreeNode a) where
 
 instance (Semigroup a) => Monoid (TreeNode a) where
   mempty = TreeNode { _distance = Nothing, _item = mempty }
+
+instance Semigroup LabelMap where
+  (<>) (LabelMap x) (LabelMap y)  = LabelMap $ Map.union x y
+
+instance Monoid LabelMap where
+  mempty = LabelMap Map.empty
