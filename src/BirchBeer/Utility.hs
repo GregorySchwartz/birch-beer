@@ -116,11 +116,17 @@ lengthElementsTree =
 -- | Convert a dendrogram to a tree.
 dendToTree :: HC.Dendrogram a -> Tree (TreeNode a)
 dendToTree (HC.Leaf x) =
-  Node { rootLabel = TreeNode { _distance = Nothing, _item = Just x}
+  Node { rootLabel = TreeNode { _distance = Nothing
+                              , _item = Just x
+                              , _significance = Nothing
+                              }
        , subForest = []
        }
 dendToTree (HC.Branch d l r)  =
-  Node { rootLabel = TreeNode { _distance = Just d, _item = Nothing }
+  Node { rootLabel = TreeNode { _distance = Just d
+                              , _item = Nothing
+                              , _significance = Nothing
+                              }
        , subForest = [dendToTree l, dendToTree r]
        }
 
@@ -139,7 +145,7 @@ dendrogramToGraph =
   where
     go :: (TreeItem a)
        => HC.Dendrogram (V.Vector a)
-       -> State (Int, G.Gr (G.Node, Maybe (Seq.Seq a)) HC.Distance) Int
+       -> State (Int, G.Gr (G.Node, Maybe (Seq.Seq a)) ClusterEdge) Int
     go (HC.Branch d l r) = do
         (n, gr) <- get
         modify (L.over L._1 (+ 1))
@@ -147,8 +153,8 @@ dendrogramToGraph =
         l <- go l
         r <- go r
 
-        let setGr = G.insEdge (n, r, d)
-                  . G.insEdge (n, l, d)
+        let setGr = G.insEdge (n, r, ClusterEdge (Just d) Nothing)
+                  . G.insEdge (n, l, ClusterEdge (Just d) Nothing)
                   . G.insNode (n, (n, Nothing))
 
         modify (L.over L._2 setGr)
@@ -173,7 +179,7 @@ treeToGraph =
   where
     go :: (TreeItem a)
        => Tree (TreeNode (V.Vector a))
-       -> State (Int, G.Gr (G.Node, Maybe (Seq.Seq a)) Double) Int
+       -> State (Int, G.Gr (G.Node, Maybe (Seq.Seq a)) ClusterEdge) Int
     go (Node { rootLabel = TreeNode { _item = items }, subForest = [] }) = do
         (n, gr) <- get
 
@@ -185,14 +191,14 @@ treeToGraph =
                )
 
         return n
-    go (Node { rootLabel = TreeNode { _distance = d, _item = items }, subForest = children }) = do
+    go (Node { rootLabel = TreeNode { _distance = d, _item = items, _significance = s }, subForest = children }) = do
         (n, gr) <- get
         modify (L.over L._1 (+ 1))
 
         children' <- mapM go children
 
         let setGr a = foldl'
-                        (\acc x -> G.insEdge (n, x, fromMaybe 0 d) acc)
+                        (\acc x -> G.insEdge (n, x, ClusterEdge d s) acc)
                         (G.insNode (n, (n, Nothing)) a)
                         children'
 
@@ -212,13 +218,23 @@ clusterGraphToTree (ClusterGraph gr) n | null $ G.suc gr n =
                    . fmap snd
                    . G.lab gr
                    $ n
+                   , _significance = Nothing
                    }
        , subForest = []
        }
 clusterGraphToTree (ClusterGraph gr) n | otherwise =
   Node { rootLabel =
-          TreeNode { _distance = fmap (L.view L._3) . headMay . G.out gr $ n
+          TreeNode { _distance = join
+                               . fmap (L.view (L._3 . edgeDistance))
+                               . headMay
+                               . G.out gr
+                               $ n
                    , _item = Nothing
+                   , _significance = join
+                                   . fmap (L.view (L._3 . edgeSignificance))
+                                   . headMay
+                                   . G.out gr
+                                   $ n
                    }
        , subForest = fmap (clusterGraphToTree (ClusterGraph gr)) . G.suc gr $ n
        }

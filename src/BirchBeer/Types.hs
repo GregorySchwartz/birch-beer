@@ -40,11 +40,17 @@ import qualified Data.Vector as V
 
 -- Local
 
-class TreeItem a where
-    getId :: a -> Id
+data ClusterEdge = ClusterEdge
+    { _edgeDistance :: Maybe Double
+    , _edgeSignificance :: Maybe Double
+    } deriving (A.FromJSON, A.ToJSON, Generic, Read, Show)
+makeLenses ''ClusterEdge
 
-instance TreeItem T.Text where
-    getId = Id
+data NamedMatrix = NamedMatrix
+    { _namedMat :: S.SpMatrix Double
+    , _namedRows :: V.Vector T.Text
+    , _namedCols :: V.Vector T.Text
+    }
 
 class MatrixLike a where
     getMatrix   :: a -> S.SpMatrix Double
@@ -160,7 +166,7 @@ newtype DrawScaleSaturation = DrawScaleSaturation
     { unDrawScaleSaturation :: Double
     } deriving (Read,Show)
 newtype ClusterGraph a = ClusterGraph
-    { unClusterGraph :: G.Gr (G.Node, Maybe (Seq.Seq a)) Double
+    { unClusterGraph :: G.Gr (G.Node, Maybe (Seq.Seq a)) ClusterEdge
     } deriving (Read, Show)
 newtype LeafGraph a = LeafGraph
     { unLeafGraph :: G.Gr (G.Node, a) Double
@@ -194,7 +200,7 @@ data DrawItemType
     deriving (Read,Show)
 data DrawLeaf       = DrawItem DrawItemType | DrawText deriving (Read, Show)
 data DrawCollection = CollectionGraph Double Double [Int] | PieRing | PieChart | PieNone deriving (Read, Show)
-data DrawNodeMark   = MarkModularity | MarkNone deriving (Read, Show)
+data DrawNodeMark   = MarkModularity | MarkSignificance | MarkNone deriving (Read, Show)
 
 data Palette = Set1 | Ryb | Hsv | Hcl deriving (Read, Show)
 data DrawDiscretize = CustomColorMap [Kolor] | SegmentColorMap Int
@@ -238,28 +244,30 @@ data Config a b = Config
     , _birchSimMat              :: Maybe (SimMatrix b)
     }
 
-data NamedMatrix = NamedMatrix
-    { _namedMat :: S.SpMatrix Double
-    , _namedRows :: V.Vector T.Text
-    , _namedCols :: V.Vector T.Text
-    }
-
 data TreeNode a = TreeNode
     { _distance :: Maybe Double
     , _item :: Maybe a
+    , _significance :: Maybe Double
     } deriving (A.FromJSON, A.ToJSON, Generic, Read, Show)
 makeLenses ''TreeNode
 
 instance (Semigroup a) => Semigroup (TreeNode a) where
   (<>) x y  = TreeNode { _distance = L.view distance x
                        , _item = (<>) (L.view item x) (L.view item y)
+                       , _significance = L.view significance x
                        }
 
 instance (Semigroup a) => Monoid (TreeNode a) where
-  mempty = TreeNode { _distance = Nothing, _item = mempty }
+  mempty = TreeNode { _distance = Nothing, _item = mempty, _significance = Nothing }
 
 instance Semigroup LabelMap where
   (<>) (LabelMap x) (LabelMap y)  = LabelMap $ Map.union x y
 
 instance Monoid LabelMap where
   mempty = LabelMap Map.empty
+
+class TreeItem a where
+    getId :: a -> Id
+
+instance TreeItem T.Text where
+    getId = Id

@@ -411,7 +411,7 @@ drawGraphPath
     -> P2 Double
     -> (G.Node, Maybe (Seq.Seq a))
     -> P2 Double
-    -> HC.Distance
+    -> ClusterEdge
     -> Path V2 Double
     -> Diagram B
 drawGraphPath opts ncm gr (n1, _) p1 (n2, _) p2 _ _ =
@@ -591,10 +591,11 @@ plotGraph
 plotGraph legend opts cm ncm mcm lgm (ClusterGraph gr) = do
     let numClusters :: Double
         numClusters = fromIntegral . Seq.length $ getGraphLeaves gr 0
-        params :: (TreeItem a) => G.GraphvizParams Int (G.Node, Maybe (Seq.Seq a)) HC.Distance () (G.Node, Maybe (Seq.Seq a))
+        maxNodeSize = unDrawMaxNodeSize . _drawMaxNodeSize $ opts
+        params :: (TreeItem a) => G.GraphvizParams Int (G.Node, Maybe (Seq.Seq a)) ClusterEdge () (G.Node, Maybe (Seq.Seq a))
         params = G.defaultDiaParams
-            { G.fmtEdge = (\(_, _, w) -> [G.Len w])
-            , G.globalAttributes = [G.GraphAttrs { G.attrs = [G.Sep $ G.DVal 36] }]
+            { G.fmtEdge = (\(_, _, !w) -> [G.Len . fromMaybe 0 . L.view edgeDistance $ w])
+            , G.globalAttributes = [G.GraphAttrs { G.attrs = [G.Sep . G.DVal $ maxNodeSize / 2] }]
             }
 
     layout <- G.layoutGraph' params G.TwoPi gr

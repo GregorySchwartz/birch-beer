@@ -179,7 +179,7 @@ distanceSearchCut d = searchCut (maybe False (>= d) . L.view distance) False
 distanceSearchCutNodes :: Double -> ClusterGraph a -> Set.Set G.Node
 distanceSearchCutNodes d = Set.fromList
                          . concatMap (\(!x, !y, _) -> [x, y])
-                         . filter ((>= d) . L.view L._3)
+                         . filter ((>= Just d) . L.view (L._3 . edgeDistance))
                          . G.labEdges
                          . unClusterGraph
 

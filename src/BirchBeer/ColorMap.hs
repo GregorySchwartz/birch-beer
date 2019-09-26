@@ -279,15 +279,17 @@ getItemColorMapSumContinuous customColors mat =
 
 -- | Use the outgoing edges of a node to define the mark around the node.
 -- Min max normalization.
-getMarkColorMap :: ClusterGraph a -> MarkColorMap
-getMarkColorMap g =
+getMarkColorMap :: DrawNodeMark -> ClusterGraph a -> MarkColorMap
+getMarkColorMap nm g =
     MarkColorMap . Map.map (withOpacity black) $ valMap
   where
     valMap   = Map.map (minMaxNorm minVal maxVal) . Map.fromList $ valAssoc
     minVal   = minimum . fmap snd $ valAssoc
     maxVal   = maximum . fmap snd $ valAssoc
     valAssoc = fmap nodeValue . G.labEdges . unClusterGraph $ g
-    nodeValue (n1, n2, v) = (n1, v)
+    nodeValue (n1, n2, v) = (n1, fromMaybe 0 $ L.view (valLens nm) v)
+    valLens MarkModularity = edgeDistance
+    valLens MarkSignificance = edgeSignificance
 
 -- | Get the node color map based on the labels of each item.
 getNodeColorMapFromItems

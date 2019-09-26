@@ -126,8 +126,8 @@ mainDiagram config = do
                           labelColorMapRaw
         -- | Get the mark color map.
         markColorMap = case drawMark' of
-                        MarkModularity -> Just $ getMarkColorMap gr
-                        _ -> Nothing
+                        MarkNone -> Nothing
+                        _ -> Just $ getMarkColorMap drawMark' gr
         defaultGetItemColorMap :: Maybe ItemColorMap
         defaultGetItemColorMap = do
             lcm <- labelColorMapRaw

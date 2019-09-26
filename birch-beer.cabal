@@ -1,5 +1,5 @@
 name:                birch-beer
-version:             0.1.4.5
+version:             0.2.0.0
 synopsis:            Plot a colorful tree.
 description:         Generate a tree for displaying a hierarchy of groups with colors, scaling, and more.
 homepage:            http://github.com/GregorySchwartz/birch-beer#readme
@@ -21,6 +21,7 @@ library
                      , BirchBeer.LeafGraph
                      , BirchBeer.Load
                      , BirchBeer.MainDiagram
+                     , BirchBeer.Options
                      , BirchBeer.Plot
                      , BirchBeer.Stopping
                      , BirchBeer.Utility
@@ -48,6 +49,7 @@ library
                      , lens
                      , matrix-market-attoparsec
                      , mtl
+                     , optparse-generic
                      , palette
                      , plots
                      , safe
