@@ -14,6 +14,7 @@ module BirchBeer.Utility
     , isTo
     , branchToLeaf
     , branchToLeafDend
+    , clusteringTreeToTree
     , lengthElementsDend
     , lengthElementsTree
     , isLeaf
@@ -47,6 +48,7 @@ import Data.Tree (Tree (..), flatten)
 import Safe (atMay, headMay)
 import qualified Control.Lens as L
 import qualified Data.Clustering.Hierarchical as HC
+import qualified Math.Clustering.Hierarchical.Spectral.Types as HSC
 import qualified Data.Foldable as F
 import qualified Data.Graph.Inductive as G
 import qualified Data.Map.Strict as Map
@@ -128,6 +130,23 @@ dendToTree (HC.Branch d l r)  =
                               , _significance = Nothing
                               }
        , subForest = [dendToTree l, dendToTree r]
+       }
+
+-- | Convert a ClusteringTree to a tree.
+clusteringTreeToTree :: HSC.ClusteringTree a -> Tree (TreeNode (V.Vector a))
+clusteringTreeToTree (Node { rootLabel = n, subForest = []}) =
+  Node { rootLabel = TreeNode { _distance = Nothing
+                              , _item = Just . HSC._clusteringItems $ n
+                              , _significance = Nothing
+                              }
+       , subForest = []
+       }
+clusteringTreeToTree (Node { rootLabel = n, subForest = xs }) =
+  Node { rootLabel = TreeNode { _distance = Just . HSC.unQ . HSC._ngMod $ n
+                              , _item = Nothing
+                              , _significance = HSC._pVal n
+                              }
+       , subForest = fmap clusteringTreeToTree xs
        }
 
 -- | Convert a dendrogram with height as Q values to a graph for
