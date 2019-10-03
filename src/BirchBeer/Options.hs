@@ -43,6 +43,7 @@ data Options = Options
     , drawColors :: Maybe String <?> "([Nothing] | COLORS) Custom colors for the labels or continuous features. Will repeat if more labels than provided colors. For continuous feature plots, uses first two colors [high, low], defaults to [red, gray]. For instance: --draw-colors \"[\\\"#e41a1c\\\", \\\"#377eb8\\\"]\""
     , drawDiscretize :: Maybe String <?> "([Nothing] | COLORS | INT) Discretize colors by finding the nearest color for each item and node. For instance, --draw-discretize \"[\\\"#e41a1c\\\", \\\"#377eb8\\\"]\" will change all node and item colors to one of those two colors, based on Euclidean distance. If using \"--draw-discretize INT\", will instead take the default map and segment (or interpolate) it into INT colors, rather than a more continuous color scheme. May have unintended results when used with --draw-scale-saturation."
     , drawScaleSaturation :: Maybe Double <?> "([Nothing] | DOUBLE) Multiply the saturation value all nodes by this number in the HSV model. Useful for seeing more visibly the continuous colors by making the colors deeper against a gray scale."
+    , drawFont :: Maybe String <?> "([Arial] | FONT) Specify the font to use for the labels when plotting."
     , interactive :: Bool <?> "Display interactive tree."
     } deriving (Generic)
 
@@ -50,27 +51,28 @@ modifiers :: Modifiers
 modifiers = lispCaseModifiers { shortNameModifier = short }
   where
     short "customCut"            = Nothing
-    short "inputMatrix"          = Just 'X'
-    short "minSize"              = Just 'M'
-    short "maxStep"              = Just 'S'
-    short "maxProportion"        = Just 'P'
-    short "minDistance"          = Just 'T'
-    short "minDistanceSearch"    = Nothing
-    short "drawLeaf"             = Just 'L'
     short "drawCollection"       = Just 'D'
-    short "drawDiscretize"       = Nothing
-    short "drawNodeNumber"       = Just 'N'
-    short "drawMark"             = Just 'K'
     short "drawColors"           = Just 'R'
-    short "drawNoScaleNodes"     = Just 'W'
-    short "drawMaxNodeSize"      = Just 'A'
-    short "drawMaxLeafNodeSize"  = Nothing
-    short "drawLegendSep"        = Just 'Q'
+    short "drawDiscretize"       = Nothing
+    short "drawFont"             = Nothing
+    short "drawLeaf"             = Just 'L'
     short "drawLegendAllLabels"  = Just 'J'
+    short "drawLegendSep"        = Just 'Q'
+    short "drawMark"             = Just 'K'
+    short "drawMaxLeafNodeSize"  = Nothing
+    short "drawMaxNodeSize"      = Just 'A'
+    short "drawNoScaleNodes"     = Just 'W'
+    short "drawNodeNumber"       = Just 'N'
     short "drawPalette"          = Just 'Y'
     short "drawScaleSaturation"  = Just 'V'
-    short "order"                = Just 'O'
+    short "inputMatrix"          = Just 'X'
     short "interactive"          = Just 'I'
+    short "maxProportion"        = Just 'P'
+    short "maxStep"              = Just 'S'
+    short "minDistance"          = Just 'T'
+    short "minDistanceSearch"    = Nothing
+    short "minSize"              = Just 'M'
+    short "order"                = Just 'O'
     short x                      = firstLetter x
 
 instance ParseRecord Options where

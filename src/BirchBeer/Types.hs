@@ -165,6 +165,9 @@ newtype NodeColorMap = NodeColorMap
 newtype DrawScaleSaturation = DrawScaleSaturation
     { unDrawScaleSaturation :: Double
     } deriving (Read,Show)
+newtype DrawFont = DrawFont
+    { unDrawFont :: String
+    } deriving (Read,Show)
 newtype ClusterGraph a = ClusterGraph
     { unClusterGraph :: G.Gr (G.Node, Maybe (Seq.Seq a)) ClusterEdge
     } deriving (Read, Show)
@@ -239,6 +242,7 @@ data Config a b = Config
     , _birchDrawColors          :: Maybe CustomColors
     , _birchDrawDiscretize      :: Maybe DrawDiscretize
     , _birchDrawScaleSaturation :: Maybe DrawScaleSaturation
+    , _birchDrawFont            :: Maybe DrawFont
     , _birchTree                :: Tree (TreeNode (V.Vector a))
     , _birchMat                 :: Maybe b
     , _birchSimMat              :: Maybe (SimMatrix b)

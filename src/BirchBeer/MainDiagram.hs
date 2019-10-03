@@ -85,6 +85,7 @@ mainDiagram config = do
         drawColors'       = _birchDrawColors config
         drawDiscretize'   = _birchDrawDiscretize config
         drawScaleSaturation' = _birchDrawScaleSaturation config
+        drawFont'         = fromMaybe (DrawFont "Arial") $ _birchDrawFont config
         order'            = fromMaybe (Order 1) $ _birchOrder config
         mat               = return $ _birchMat config
         simMat            = _birchSimMat config
@@ -208,6 +209,7 @@ mainDiagram config = do
                 (DrawItem (DrawContinuous x)) ->
                     fmap
                         ( fmap ( plotContinuousLegend
+                                  drawFont'
                                   drawColors'
                                   discreteColors
                                   (fromMaybe (DrawScaleSaturation 1) drawScaleSaturation')
@@ -219,6 +221,7 @@ mainDiagram config = do
                     fmap
                       ( fmap
                           ( plotSumContinuousLegend
+                            drawFont'
                             drawColors'
                             discreteColors
                             (fromMaybe (DrawScaleSaturation 1) drawScaleSaturation')
@@ -230,7 +233,7 @@ mainDiagram config = do
                     lm <- labelMap'
                     lcm <- labelColorMap
                     return
-                        . plotLabelLegend
+                        . plotLabelLegend drawFont'
                         . bool
                               (subsetLabelColorMap gr lm)
                               id

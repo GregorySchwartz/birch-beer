@@ -128,6 +128,7 @@ main = do
             finalError err x = "Error in draw-discretize: " <> err <> " " <> x
         drawScaleSaturation' =
             fmap DrawScaleSaturation . unHelpful . drawScaleSaturation $ opts
+        drawFont' = fmap DrawFont . unHelpful . drawFont $ opts
         output'           =
             fromMaybe "dendrogram.svg" . unHelpful . output $ opts
 
@@ -191,6 +192,7 @@ main = do
                         , _birchDrawColors          = drawColors'
                         , _birchDrawDiscretize      = drawDiscretize'
                         , _birchDrawScaleSaturation = drawScaleSaturation'
+                        , _birchDrawFont            = drawFont'
                         , _birchTree                = tree
                         , _birchMat                 = Nothing
                         , _birchSimMat              = simMat

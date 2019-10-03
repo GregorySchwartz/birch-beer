@@ -243,15 +243,15 @@ getItem color = circle 1 # lc black # fc color # lwL 0.1 -- Unfortunately cannot
 legendFontSize :: Double
 legendFontSize = (/ 2.5) $ (def :: Legend B Double) ^. legendSpacing
 
-plotLabelLegend :: LabelColorMap -> Diagram B
-plotLabelLegend = flip (drawLegend emptyBox) legendOpts
-                . fmap plotLabel
-                . Map.toAscList
-                . unLabelColorMap
+plotLabelLegend :: DrawFont -> LabelColorMap -> Diagram B
+plotLabelLegend (DrawFont font') = flip (drawLegend emptyBox) legendOpts
+                                 . fmap plotLabel
+                                 . Map.toAscList
+                                 . unLabelColorMap
   where
     legendOpts :: Legend B Double
     legendOpts =
-      over legendTextStyle (const (mempty # font "Arial" # fontSizeL legendFontSize))
+      over legendTextStyle (const (mempty # font font' # fontSizeL legendFontSize))
         . over legendStyle (lw none)
         $ def
     plotLabel :: (Label, Colour Double) -> (Diagram B, String)
@@ -261,9 +261,9 @@ plotLabelLegend = flip (drawLegend emptyBox) legendOpts
         )
 
 -- | Continous style of color bar.
-cbOpts :: Maybe DiscreteColorMap -> ColourBar B Double
-cbOpts discreteColors =
-  over tickLabelStyle (font "Arial" # fontSizeL legendFontSize)
+cbOpts :: DrawFont -> Maybe DiscreteColorMap -> ColourBar B Double
+cbOpts (DrawFont font') discreteColors =
+  over tickLabelStyle (font font' # fontSizeL legendFontSize)
     . over colourBarStyle (lwL (0.2 * legendFontSize))
     . set majorTicksStyle (mempty # lwL (0.2 * legendFontSize))
     . set (minorTicks . visible) False
@@ -280,23 +280,24 @@ cbOpts discreteColors =
 -- | Get the legend for a feature. Bar from
 -- https://archives.haskell.org/projects.haskell.org/diagrams/blog/2013-12-03-Palette1.html
 plotContinuousLegend :: (MatrixLike a)
-                     => Maybe CustomColors
+                     => DrawFont
+                     -> Maybe CustomColors
                      -> Maybe DiscreteColorMap
                      -> DrawScaleSaturation
                      -> [Feature]
                      -> a
                      -> Diagram B
-plotContinuousLegend customColors discreteColors sat gs mat =
+plotContinuousLegend (DrawFont font') customColors discreteColors sat gs mat =
     either text dia $ getCombinedFeatures gs $ mat
   where
     dia fs = vsep
                (legendFontSize * 1.2)
                [ text (T.unpack . T.intercalate " " . fmap unFeature $ gs)
-               # font "Arial"
+               # font font'
                # fontSizeL legendFontSize
                , rotateBy (3 / 4)
                $ renderColourBar
-                   (cbOpts discreteColors)
+                   (cbOpts (DrawFont font') discreteColors)
                    cm
                    (fromMaybe 0 minVal, fromMaybe 0 maxVal)
                    100
@@ -315,17 +316,18 @@ plotContinuousLegend customColors discreteColors sat gs mat =
 -- | Get the legend for the sum of all features. Bar from
 -- https://archives.haskell.org/projects.haskell.org/diagrams/blog/2013-12-03-Palette1.html
 plotSumContinuousLegend :: (MatrixLike a)
-                        => Maybe CustomColors
+                        => DrawFont
+                        -> Maybe CustomColors
                         -> Maybe DiscreteColorMap
                         -> DrawScaleSaturation
                         -> a
                         -> Diagram B
-plotSumContinuousLegend customColors discreteColors sat mat = vsep
+plotSumContinuousLegend (DrawFont font') customColors discreteColors sat mat = vsep
         (legendFontSize * 1.2)
-        [ text "Total Sum" # font "Arial" # fontSizeL legendFontSize
+        [ text "Total Sum" # font font' # fontSizeL legendFontSize
         , rotateBy (3 / 4)
         $ renderColourBar
-            (cbOpts discreteColors)
+            (cbOpts (DrawFont font') discreteColors)
             cm
             (fromMaybe 0 minVal, fromMaybe 0 maxVal)
             100
