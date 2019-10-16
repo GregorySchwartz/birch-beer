@@ -61,6 +61,7 @@ main = do
         minDistanceSearch' = fmap MinDistanceSearch . unHelpful . minDistanceSearch $ opts
         smartCutoff'      = fmap SmartCutoff . unHelpful . smartCutoff $ opts
         customCut'        = CustomCut . Set.fromList . unHelpful . customCut $ opts
+        rootCut'          = fmap RootCut . unHelpful . rootCut $ opts
         order'            = fmap Order . unHelpful . order $ opts
         drawLeaf'            =
             maybe
@@ -178,6 +179,7 @@ main = do
                         , _birchMinDistanceSearch   = minDistanceSearch'
                         , _birchSmartCutoff         = smartCutoff'
                         , _birchCustomCut           = customCut'
+                        , _birchRootCut             = rootCut'
                         , _birchOrder               = order'
                         , _birchDrawLeaf            = drawLeaf'
                         , _birchDrawCollection      = drawCollection'

@@ -105,6 +105,7 @@ interactiveDiagram tree labelMap mat simMat = graphicalUI' "birch-beer" $ do
                             , _birchMinDistanceSearch   = Nothing
                             , _birchSmartCutoff         = Nothing
                             , _birchCustomCut           = CustomCut Set.empty
+                            , _birchRootCut             = Nothing
                             , _birchOrder               = Nothing
                             , _birchDrawLeaf            = drawLeaf'
                             , _birchDrawCollection      = drawCollection'

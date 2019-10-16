@@ -113,6 +113,9 @@ newtype MinDistanceSearch = MinDistanceSearch
 newtype CustomCut = CustomCut
     { unCustomCut :: Set.Set Int
     } deriving (Read,Show)
+newtype RootCut = RootCut
+    { unRootCut :: Int
+    } deriving (Read,Show)
 newtype SmartCutoff = SmartCutoff
     { unSmartCutoff :: Double
     } deriving (Read,Show)
@@ -223,6 +226,7 @@ data Config a b = Config
     { _birchLabelMap            :: Maybe LabelMap
     , _birchSmartCutoff         :: Maybe SmartCutoff
     , _birchCustomCut           :: CustomCut
+    , _birchRootCut             :: Maybe RootCut
     , _birchMinSize             :: Maybe MinClusterSize
     , _birchMaxStep             :: Maybe MaxStep
     , _birchMaxProportion       :: Maybe MaxProportion

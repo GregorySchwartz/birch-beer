@@ -44,6 +44,7 @@ mainDiagram config = do
         labelMap'         = _birchLabelMap config
         smartCutoff'      = _birchSmartCutoff config
         customCut'        = _birchCustomCut config
+        rootCut'          = _birchRootCut config
         maxStep'          = _birchMaxStep config
         minSize'          =
             case (fmap unSmartCutoff smartCutoff', _birchMinSize config) of
@@ -98,6 +99,7 @@ mainDiagram config = do
                        . unCustomCut
                        $ customCut'
                   )
+                , (\x -> maybe x (clusterGraphToTree (treeToGraph x) . unRootCut) rootCut')
                 , (\x -> maybe x (flip proportionCut x . unMaxProportion) maxProportion')
                 , (\x -> maybe x (flip distanceCut x . unMinDistance) minDistance')
                 , (\x -> maybe x (flip distanceSearchCut x . unMinDistanceSearch) minDistanceSearch')
