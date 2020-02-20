@@ -27,7 +27,8 @@ data Options = Options
     , maxProportion :: Maybe Double <?> "([Nothing] | DOUBLE) Stopping criteria to stop at the node immediate after a node with DOUBLE proportion split. So a node N with L and R children will stop with this criteria at 0.5 if |L| / |R| < 0.5 or > 2 (absolute log2 transformed), that is, if one child has over twice as many items as the other child. Includes L and R in the final result."
     , minDistance :: Maybe Double <?> "([Nothing] | DOUBLE) Stopping criteria to stop at the node immediate after a node with DOUBLE distance. So a node N with L and R children will stop with this criteria the distance at N to L and R is < DOUBLE. Includes L and R in the final result."
     , minDistanceSearch :: Maybe Double <?> "([Nothing] | DOUBLE) Similar to --min-distance, but searches from the leaves to the root -- if a path from a subtree contains a distance of at least DOUBLE, keep that path, otherwise prune it. This argument assists in finding distant nodes."
-    , smartCutoff :: Maybe Double <?> "([Nothing] | DOUBLE) Whether to set the cutoffs for --min-size, --max-proportion, --min-distance, and --min-distance-search based off of the distributions (median + (DOUBLE * MAD)) of all nodes. To use smart cutoffs, use this argument and then set one of the three arguments to an arbitrary number, whichever cutoff type you want to use. --min-size distribution is log2 transformed."
+    , smartCutoff :: Maybe Double <?> "([Nothing] | DOUBLE) Whether to set the cutoffs for --min-size, --max-proportion, --min-distance, and --min-distance-search based off of the distributions (median + (DOUBLE * MAD)) of all nodes. To use smart cutoffs, use this argument and then set one of the three arguments to an arbitrary number, whichever cutoff type you want to use. --max-proportion and --min-size distributions are log2 transformed."
+    , elbowCutoff :: Maybe String <?> "(Max | Min) Whether to set the cutoffs for --min-size, --max-proportion, --min-distance, and --min-distance-search based off of the elbow point of distributions of all nodes. For a distribution in positive x and y on a graph, the top left hump would be Max and the bottom right dip would be Min. To use elbow cutoffs, use this argument and then set one of the three arguments to an arbitrary number, whichever cutoff type you want to use. --max-proportion and --min-size distributions are log2 transformed. Conflicts with --smart-cutoff, so this argument takes precedent."
     , customCut :: [Int] <?> "([Nothing] | NODE) List of nodes to prune (make these nodes leaves). Invoked by --custom-cut 34 --custom-cut 65 etc."
     , rootCut :: Maybe Int <?> "([Nothing] | NODE) Assign a new root to the tree, removing all nodes outside of the subtree."
     , order :: Maybe Double <?> "([1] | DOUBLE) The order of diversity for DrawItem DrawDiversity."
@@ -66,6 +67,7 @@ modifiers = lispCaseModifiers { shortNameModifier = short }
     short "drawNodeNumber"       = Just 'N'
     short "drawPalette"          = Just 'Y'
     short "drawScaleSaturation"  = Just 'V'
+    short "elbowCut"             = Nothing
     short "inputMatrix"          = Just 'X'
     short "interactive"          = Just 'I'
     short "maxProportion"        = Just 'P'

@@ -15,7 +15,7 @@
 # resolver:
 #  name: custom-snapshot
 #  location: "./custom-snapshot.yaml"
-resolver: lts-12.0
+resolver: lts-14.1
 
 # User packages to be built.
 # Various formats can be used as shown in the example below.
@@ -40,38 +40,28 @@ packages:
 # Dependency packages to be pulled from upstream that are not in the resolver
 # (e.g., acme-missiles-0.3)
 extra-deps:
-- spectral-clustering-0.3.1.1
-- hierarchical-spectral-clustering-0.5.0.1
-- modularity-0.2.1.1
-- SVGFonts-1.6.0.3
-- clustering-0.4.0
-- cubicbezier-0.6.0.5
-- diagrams-1.4
-- diagrams-cairo-1.4.1
-- diagrams-contrib-1.4.3
-- diagrams-core-1.4.1
-- diagrams-graphviz-1.4.1
-- diagrams-gtk-1.4
-- diagrams-lib-1.4.2.3
-- diagrams-solve-0.1.1
-- diagrams-svg-1.4.2
-- diversity-0.8.1.0
-- dual-tree-0.2.1.1
-# - eigen-3.3.4.1
-- fast-math-1.0.2
-- fasta-0.10.4.2
-- gio-0.13.4.1
-- graphviz-2999.20.0.2
-- gtk-0.14.7
-- hmatrix-svdlibc-0.5.0.1
-- mfsolve-0.3.2.0
-- pipes-text-0.0.2.5
-- plots-0.1.1.0
-- streaming-cassava-0.1.0.1
-- streaming-with-0.2.1.1
-- typed-spreadsheet-1.1.3
-# - git: https://github.com/GregorySchwartz/hierarchical-clustering-diagrams.git
-#   commit: b92d8cc9b5275df38198ede27b58f7e35aaf69d1
+- diagrams-cairo-1.4.1.1@sha256:0cc976d4844a9890ebfc1a5c319f3b0c388a26ca1374285c5c31a6ab5dd11aaf,3715
+- diagrams-graphviz-1.4.1@sha256:072c531d69822421cf318d80731c4f7b5e1b6e4d228db3507f84e9057e7a1f12,1400
+- diagrams-gtk-1.4@sha256:2a93a574e108c6765451bbb9088f69b91d0e7bf1a8558e20ceb5dd5faa1d114c,1228
+- diversity-0.8.1.0@sha256:90ceaafb8343c442091b9cd3c2b7bdb9e2ba90d36c168030f0a00c50787effea,1889
+- gtk-0.15.4@sha256:992c73967818523cb46f52c4325f3aa4ff18aaf23d0f7d4cb16a8dfe87b5215f,16578
+- hierarchical-clustering-0.4.7@sha256:85beadd12f6c1dc2836478068291277c5e89a6e706d4fc8a652b7be8a918b5c4,3335
+- hierarchical-spectral-clustering-0.5.0.1@sha256:e3ddff4b044c085b94131782050c23101dd0cb18a6f0af9d96512cb9518e6d26,2433
+- plots-0.1.1.2@sha256:01f2ba7ca0c1e00b5231a81b44a3b8b9fd21b49bc333ff4cef880e31c5332935,2034
+- spectral-clustering-0.3.1.3@sha256:631289d2971132a702b745f709aeded224685f0f8ce1485388a312e44006ff0c,1012
+- typed-spreadsheet-1.1.4@sha256:98e05083609a206f33f44bdd9bab26fe1d5e5619f17b8ec8da251f0d0b64e992,2665
+- cairo-0.13.8.0@sha256:9b64a376ebaa4f153bba5866a32291fd4bed48147009cce9158ce6533928eba8,4075
+- clustering-0.4.1@sha256:78d8e077f27526ff03b3879d951e09e040ca7dc23dd0e6044970be9d40ea37e2,2066
+- fasta-0.10.4.2@sha256:006295e2ab35d083a7a8c916f13ac4bdc532b1ccbbc081b8fe1d0220170987ab,3886
+- gio-0.13.8.0@sha256:5691212b07dc4193ea6f8202a625c9515d750b249aeafc659139e29a5ec61436,3116
+- glib-0.13.8.0@sha256:97698bd054bad38756f3ef0220d7684f72e42660d261e9b118aa73419ce9207d,3136
+- gtk2hs-buildtools-0.13.8.0@sha256:132f38155fc677430a47ea750918973161c876fb6f281d342ac2f07eb99229ce,5238
+- hmatrix-svdlibc-0.5.0.1@sha256:b0ad29ae6fdaafe2e9d3facc9f29e1779dc87fce674ae07df428e0b7ec4ab13b,2514
+- modularity-0.2.1.1@sha256:147e93b5c593e6070c390ce0ca850e83c13a23f6f7b6d38536acdc46ee2e8196,902
+- pango-0.13.8.0@sha256:690149ea2efb03c783937b69a5ec6ac854806146fd760e28e800634a6c2243c1,3897
+- streaming-with-0.2.2.1@sha256:f5f354c9d1ed9358bf91792a2804c897544b170b2891b6c0ee61120605f0327c,1280
+- pipes-text-0.0.2.5@sha256:16cfd1927817a1c757b15c37ad95c67e819c28b1c4a6ce9757ab15276ec36ac7,3326
+- elbow-0.2.0.0
 
 # Override default flag values for local packages and extra-deps
 # flags: {}

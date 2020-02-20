@@ -1,5 +1,5 @@
 name:                birch-beer
-version:             0.2.2.0
+version:             0.2.3.0
 synopsis:            Plot a colorful tree.
 description:         Generate a tree for displaying a hierarchy of groups with colors, scaling, and more.
 homepage:            http://github.com/GregorySchwartz/birch-beer#readme
@@ -39,6 +39,7 @@ library
                      , diagrams-gtk
                      , diagrams-lib
                      , diversity
+                     , elbow
                      , fgl
                      , foldl
                      , graphviz
@@ -80,6 +81,7 @@ executable birch-beer
                      , diagrams
                      , diagrams-cairo
                      , diagrams-lib
+                     , elbow
                      , hierarchical-spectral-clustering
                      , lens
                      , optparse-generic

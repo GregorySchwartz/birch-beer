@@ -26,6 +26,7 @@ module BirchBeer.Stopping
     , getProportionDend
     , smartCut
     , smartCutDend
+    , elbowCut
     , customCut
     , searchCut
     ) where
@@ -38,6 +39,7 @@ import Data.List (genericLength, maximumBy, tails)
 import Data.Maybe (catMaybes, fromMaybe)
 import Data.Monoid ((<>))
 import Data.Tree (Tree (..), flatten)
+import Math.Elbow (MinMax (..), findElbowList)
 import Safe (headMay)
 import qualified Control.Lens as L
 import qualified Data.Clustering.Hierarchical as HC
@@ -265,3 +267,14 @@ smartCut ::
 smartCut n f tree = median S.s xs + (n * mad S.s xs)
   where
     xs = V.fromList . catMaybes . getNodeInfo f $ tree
+
+-- | Get the elbow point of a tree.
+elbowCut ::
+  MinMax -> (Tree (TreeNode a) -> Maybe Double) -> Tree (TreeNode a) -> Double
+elbowCut minMax f tree =
+  fromMaybe (error "No elbow point found")
+    . fmap (snd . snd)
+    . findElbowList minMax
+    $ [[0..genericLength xs - 1], xs]
+  where
+    xs = catMaybes . getNodeInfo f $ tree

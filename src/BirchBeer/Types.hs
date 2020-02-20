@@ -24,6 +24,7 @@ import Data.Tree (Tree (..))
 import Diagrams.Backend.Cairo
 import Diagrams.Prelude hiding (distance)
 import GHC.Generics (Generic)
+import Math.Elbow (MinMax (..))
 import TextShow (showt)
 import qualified Control.Lens as L
 import qualified Data.Aeson as A
@@ -118,6 +119,9 @@ newtype RootCut = RootCut
     } deriving (Read,Show)
 newtype SmartCutoff = SmartCutoff
     { unSmartCutoff :: Double
+    } deriving (Read,Show)
+newtype ElbowCutoff = ElbowCutoff
+    { unElbowCutoff :: MinMax
     } deriving (Read,Show)
 newtype Order = Order
     { unOrder :: Double
@@ -225,6 +229,7 @@ data DrawConfig = DrawConfig
 data Config a b = Config
     { _birchLabelMap            :: Maybe LabelMap
     , _birchSmartCutoff         :: Maybe SmartCutoff
+    , _birchElbowCutoff         :: Maybe ElbowCutoff
     , _birchCustomCut           :: CustomCut
     , _birchRootCut             :: Maybe RootCut
     , _birchMinSize             :: Maybe MinClusterSize

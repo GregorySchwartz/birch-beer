@@ -43,12 +43,20 @@ mainDiagram config = do
     let tree              = _birchTree config
         labelMap'         = _birchLabelMap config
         smartCutoff'      = _birchSmartCutoff config
+        elbowCutoff'      = _birchElbowCutoff config
         customCut'        = _birchCustomCut config
         rootCut'          = _birchRootCut config
         maxStep'          = _birchMaxStep config
         minSize'          =
-            case (fmap unSmartCutoff smartCutoff', _birchMinSize config) of
-                (Just x, Just _)   ->
+            case (fmap unSmartCutoff smartCutoff', fmap unElbowCutoff elbowCutoff', _birchMinSize config) of
+                (_, Just x, Just _)   ->
+                  Just
+                    . MinClusterSize
+                    . round
+                    . (2 **)
+                    . elbowCut x (Just . logBase 2 . getSize)
+                    $ tree
+                (Just x, Nothing, Just _)   ->
                   Just
                     . MinClusterSize
                     . round
@@ -57,22 +65,30 @@ mainDiagram config = do
                     $ tree
                 otherwise          -> _birchMinSize config
         maxProportion'    =
-            case (fmap unSmartCutoff smartCutoff', _birchMaxProportion config) of
-                (Just x, Just _)   -> Just
-                                    . MaxProportion
-                                    . (2 **)
-                                    $ smartCut x getProportion tree
-                otherwise          -> _birchMaxProportion config
+            case (fmap unSmartCutoff smartCutoff', fmap unElbowCutoff elbowCutoff', _birchMaxProportion config) of
+                (_, Just x, Just _)       -> Just
+                                           . MaxProportion
+                                           . (2 **)
+                                           $ elbowCut x getProportion tree
+                (Just x, Nothing, Just _) -> Just
+                                           . MaxProportion
+                                           . (2 **)
+                                           $ smartCut x getProportion tree
+                otherwise                 -> _birchMaxProportion config
         minDistance'      =
-            case (fmap unSmartCutoff smartCutoff', _birchMinDistance config) of
-                (Just x, Just _)   ->
+            case (fmap unSmartCutoff smartCutoff', fmap unElbowCutoff elbowCutoff', _birchMinDistance config) of
+                (_, Just x, Just _)       ->
+                    Just . MinDistance $ elbowCut x getDistance tree
+                (Just x, Nothing, Just _) ->
                     Just . MinDistance $ smartCut x getDistance tree
-                otherwise          -> _birchMinDistance config
+                otherwise                 -> _birchMinDistance config
         minDistanceSearch'      =
-            case (fmap unSmartCutoff smartCutoff', _birchMinDistanceSearch config) of
-                (Just x, Just _)   ->
+            case (fmap unSmartCutoff smartCutoff', fmap unElbowCutoff elbowCutoff', _birchMinDistanceSearch config) of
+                (_, Just x, Just _)       ->
+                    Just . MinDistanceSearch $ elbowCut x getDistance tree
+                (Just x, Nothing, Just _) ->
                     Just . MinDistanceSearch $ smartCut x getDistance tree
-                otherwise          -> _birchMinDistanceSearch config
+                otherwise                 -> _birchMinDistanceSearch config
         drawLeaf'         = _birchDrawLeaf config
         drawCollection'   = _birchDrawCollection config
         drawMark'         = _birchDrawMark config

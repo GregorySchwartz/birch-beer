@@ -60,25 +60,33 @@ main = do
         minDistance'      = fmap MinDistance . unHelpful . minDistance $ opts
         minDistanceSearch' = fmap MinDistanceSearch . unHelpful . minDistanceSearch $ opts
         smartCutoff'      = fmap SmartCutoff . unHelpful . smartCutoff $ opts
+        elbowCutoff'      =
+          fmap ( ElbowCutoff
+               . fromMaybe (error "Cannot read --elbow-cutoff.")
+               . readMaybe
+               )
+            . unHelpful
+            . elbowCutoff
+            $ opts
         customCut'        = CustomCut . Set.fromList . unHelpful . customCut $ opts
         rootCut'          = fmap RootCut . unHelpful . rootCut $ opts
         order'            = fmap Order . unHelpful . order $ opts
         drawLeaf'            =
             maybe
               (maybe DrawText (const (DrawItem DrawLabel)) labelsFile')
-              (fromMaybe (error "Cannot read draw-leaf.") . readMaybe)
+              (fromMaybe (error "Cannot read --draw-leaf.") . readMaybe)
                 . unHelpful
                 . drawLeaf
                 $ opts
         drawCollection'      = maybe
                                  PieChart
-                                 (fromMaybe (error "Cannot read draw-collection.") . readMaybe)
+                                 (fromMaybe (error "Cannot read --draw-collection.") . readMaybe)
                              . unHelpful
                              . drawCollection
                              $ opts
         drawMark'            = maybe
                                    MarkNone
-                                   (fromMaybe (error "Cannot read draw-mark.") . readMaybe)
+                                   (fromMaybe (error "Cannot read --draw-mark.") . readMaybe)
                              . unHelpful
                              . drawMark
                              $ opts
@@ -101,7 +109,7 @@ main = do
             DrawLegendAllLabels . unHelpful . drawLegendAllLabels $ opts
         drawPalette'    = maybe
                            Set1
-                           (fromMaybe (error "Cannot read palette") . readMaybe)
+                           (fromMaybe (error "Cannot read --palette") . readMaybe)
                         . unHelpful
                         . drawPalette
                         $ opts
@@ -178,6 +186,7 @@ main = do
                         , _birchMinDistance         = minDistance'
                         , _birchMinDistanceSearch   = minDistanceSearch'
                         , _birchSmartCutoff         = smartCutoff'
+                        , _birchElbowCutoff         = elbowCutoff'
                         , _birchCustomCut           = customCut'
                         , _birchRootCut             = rootCut'
                         , _birchOrder               = order'
