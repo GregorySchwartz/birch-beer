@@ -7,6 +7,7 @@ Collects helper functions in the program.
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE TupleSections #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module BirchBeer.Utility
     ( getMostFrequent
@@ -34,6 +35,8 @@ module BirchBeer.Utility
     , subsetLabelColorMap
     , getHighLowColors
     , closestColor
+    , getNodeAssignments
+    , printNodeAssignments
     ) where
 
 -- Remote
@@ -46,9 +49,12 @@ import Data.Maybe (fromMaybe, catMaybes)
 import Data.Monoid ((<>))
 import Data.Tree (Tree (..), flatten)
 import Safe (atMay, headMay)
+import TextShow (showt)
 import qualified Control.Lens as L
 import qualified Data.Clustering.Hierarchical as HC
+import qualified Data.Csv as CSV
 import qualified Math.Clustering.Hierarchical.Spectral.Types as HSC
+import qualified Data.ByteString.Lazy.Char8 as B
 import qualified Data.Foldable as F
 import qualified Data.Graph.Inductive as G
 import qualified Data.Map.Strict as Map
@@ -373,3 +379,27 @@ colorToList (D.toSRGB -> D.RGB r g b) =  [r, g, b]
 -- | Euclidean distance between two lists.
 euclideanDist :: [Double] -> [Double] -> Double
 euclideanDist xs = sqrt . sum . zipWith (\x y -> (x - y) ** 2) xs
+
+-- | Get a list of clusters for each item.
+getNodeAssignments :: (TreeItem a) => ClusterGraph a -> [(a, [Cluster])]
+getNodeAssignments =
+  concatMap (\ (!ns, (_, !xs))
+            -> zip (maybe [] F.toList xs) . repeat . fmap Cluster $ ns
+            )
+      . F.toList
+      . flip getGraphLeavesWithParents 0
+      . unClusterGraph
+
+-- | Print the node assignments.
+printNodeAssignments :: (TreeItem a) => [(a, [Cluster])] -> B.ByteString
+printNodeAssignments cr = header <> "\n" <> body
+  where
+    header = "item,cluster,path"
+    body = CSV.encode
+         . fmap (\ (!ci, !(c:cs))
+                -> ( unId . getId $ ci
+                   , showt $ unCluster c
+                   , T.intercalate "/" . fmap (showt . unCluster) $ c:cs
+                   )
+                 )
+         $ cr

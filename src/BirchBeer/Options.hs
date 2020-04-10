@@ -20,6 +20,7 @@ data Options = Options
     , inputMatrix :: Maybe String <?> "([Nothing] | FILE) The input adjacency matrix file for CollectionGraph (matrix market format if ends in .mtx, \"i,j,value\" without header otherwise and text labels will be sorted when converting indices)."
     , output :: Maybe String <?> "([dendrogram.svg] | FILE) The filename for the dendrogram. Supported formats are PNG, PS, PDF, and SVG."
     , jsonOutput :: Maybe String <?> "([Nothing] | FILE) The filename for the output json tree. The input tree can change based on pruning, so this option provides a way to output the new tree as a json."
+    , csvOutput :: Maybe String <?> "([Nothing] | FILE) The filename for the output csv containing node assignment for each item. The input tree can change based on pruning, so this option provides a way to view the new assignments as a csv."
     , delimiter :: Maybe Char <?> "([,] | CHAR) The delimiter for csv files."
     , labelsFile :: Maybe String <?> "([Nothing] | FILE) The input file containing the label for each item, with \"item,label\" header."
     , minSize :: Maybe Int <?> "([1] | INT) The minimum size of a cluster. Defaults to 1."
@@ -53,6 +54,7 @@ modifiers :: Modifiers
 modifiers = lispCaseModifiers { shortNameModifier = short }
   where
     short "customCut"            = Nothing
+    short "csvOutput"            = Nothing
     short "drawCollection"       = Just 'D'
     short "drawColors"           = Just 'R'
     short "drawDiscretize"       = Nothing

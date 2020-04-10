@@ -209,7 +209,7 @@ main = do
                         , _birchSimMat              = simMat
                         }
 
-    (plot, _, _, _, tree', _) <- mainDiagram config
+    (plot, _, _, _, tree', gr) <- mainDiagram config
 
     -- Plot tree.
     D.renderCairo
@@ -219,6 +219,12 @@ main = do
 
     -- Write new tree if necessary.
     mapM_ (\x -> B.writeFile x . A.encode $ tree') . unHelpful . jsonOutput $ opts
+
+    -- Write the csv if necessary.
+    mapM_ (\x -> B.writeFile x . printNodeAssignments . getNodeAssignments $ gr)
+      . unHelpful
+      . csvOutput
+      $ opts
 
     when (unHelpful . interactive $ opts) $ interactiveDiagram tree labelMap (Nothing :: Maybe NamedMatrix) simMat
 
