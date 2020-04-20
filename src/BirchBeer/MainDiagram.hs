@@ -168,7 +168,7 @@ mainDiagram config = do
         case drawLeaf' of
             DrawItem (DrawContinuous x) ->
                 fmap
-                    ( fmap ( either (const (ItemColorMap Map.empty)) id
+                    ( fmap ( either error id
                            . getItemColorMapContinuous
                               drawColors'
                               (fmap Feature x)
