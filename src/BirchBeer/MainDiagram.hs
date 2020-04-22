@@ -143,7 +143,7 @@ mainDiagram config = do
         labelColorMap = fmap
                           (maybe id saturateLabelColorMap drawScaleSaturation')
                           labelColorMapRaw
-        -- | Get the mark color map.
+        -- Get the mark color map.
         markColorMap = case drawMark' of
                         MarkNone -> Nothing
                         _ -> Just $ getMarkColorMap drawMark' gr
@@ -152,10 +152,10 @@ mainDiagram config = do
             lcm <- labelColorMapRaw
             lm  <- labelMap'
             return $ labelToItemColorMap lcm lm
-        -- | Get the discrete color list.
+        -- Get the discrete color list.
         discreteColors = drawDiscretize'
                      >>= getDiscreteColorMap drawLeaf' drawColors' labelColorMap
-        -- | This function will decide whether to update a map or not based on
+        -- This function will decide whether to update a map or not based on
         -- user input.
         discretizeColorMapHelper :: (Eq a, Ord a)
                                  => Map.Map a (D.Colour Double)
@@ -163,7 +163,7 @@ mainDiagram config = do
         discretizeColorMapHelper cm =
           maybe cm (flip discretizeColorMap cm) discreteColors
 
-    -- | Get the item color map.
+    -- Get the item color map.
     itemColorMapRaw <-
         case drawLeaf' of
             DrawItem (DrawContinuous x) ->
@@ -179,7 +179,7 @@ mainDiagram config = do
                 fmap (fmap (getItemColorMapSumContinuous drawColors')) mat
             _                           -> return defaultGetItemColorMap
 
-    -- | Get the node color map.
+    -- Get the node color map.
     let itemColorMap = fmap ( ItemColorMap
                             . discretizeColorMapHelper
                             . unItemColorMap
@@ -198,7 +198,7 @@ mainDiagram config = do
                         (getNodeColorMapFromDiversity drawColors' order' gr)
                         itemColorMapRaw
                 _ -> fmap (getNodeColorMapFromItems gr) $ itemColorMapRaw
-    -- | Get the graph at each leaf (if applicable).
+    -- Get the graph at each leaf (if applicable).
         getAllLeafNodesSet = Set.fromList
                            . F.toList
                            . fmap fst
@@ -222,7 +222,7 @@ mainDiagram config = do
                 )
                 simMat
 
-    -- | Get the legend of the diagram.
+    -- Get the legend of the diagram.
     legend <- case drawLeaf' of
                 (DrawItem (DrawContinuous x)) ->
                     fmap
@@ -258,7 +258,7 @@ mainDiagram config = do
                               (unDrawLegendAllLabels drawLegendAllLabels')
                         $ lcm
 
-    -- | Get the entire diagram.
+    -- Get the entire diagram.
     plot <- plotGraph
                 legend
                 drawConfig
