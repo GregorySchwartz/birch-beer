@@ -91,6 +91,9 @@ interactiveDiagram tree labelMap mat simMat = graphicalUI' "birch-beer" $ do
     drawScaleSaturation' <-
         fmap (Just . DrawScaleSaturation)
             $ TS.spinButtonAt 1 "Saturate colors in the HSV model" 1
+    drawItemLineWeight' <-
+        fmap (Just . DrawItemLineWeight)
+            $ TS.spinButtonAt 0.1 "Line weight for item in collection" 1
 
     return $
         let drawLeaf' = case drawLeafTemp of
@@ -122,6 +125,7 @@ interactiveDiagram tree labelMap mat simMat = graphicalUI' "birch-beer" $ do
                             , _birchDrawDiscretize      = Nothing
                             , _birchDrawScaleSaturation = drawScaleSaturation'
                             , _birchDrawFont            = Nothing
+                            , _birchDrawItemLineWeight  = drawItemLineWeight'
                             , _birchTree                = tree
                             , _birchMat                 = mat
                             , _birchSimMat              = simMat

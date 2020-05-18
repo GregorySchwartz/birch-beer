@@ -103,6 +103,8 @@ mainDiagram config = do
         drawDiscretize'   = _birchDrawDiscretize config
         drawScaleSaturation' = _birchDrawScaleSaturation config
         drawFont'         = fromMaybe (DrawFont "Arial") $ _birchDrawFont config
+        drawItemLineWeight' = fromMaybe (DrawItemLineWeight 0.1)
+                            $ _birchDrawItemLineWeight config
         order'            = fromMaybe (Order 1) $ _birchOrder config
         mat               = return $ _birchMat config
         simMat            = _birchSimMat config
@@ -134,6 +136,7 @@ mainDiagram config = do
                                 drawMaxLeafNodeSize'
                                 drawNoScaleNodes'
                                 drawLegendSep'
+                                drawItemLineWeight'
 
     -- Get the color of each label.
     let labelColorMapRaw =

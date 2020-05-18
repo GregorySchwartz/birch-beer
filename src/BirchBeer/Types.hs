@@ -175,6 +175,9 @@ newtype DrawScaleSaturation = DrawScaleSaturation
 newtype DrawFont = DrawFont
     { unDrawFont :: String
     } deriving (Read,Show)
+newtype DrawItemLineWeight = DrawItemLineWeight
+    { unDrawItemLineWeight :: Double
+    } deriving (Read,Show)
 newtype ClusterGraph a = ClusterGraph
     { unClusterGraph :: G.Gr (G.Node, Maybe (Seq.Seq a)) ClusterEdge
     } deriving (Read, Show)
@@ -224,6 +227,7 @@ data DrawConfig = DrawConfig
     , _drawMaxLeafNodeSize  :: DrawMaxLeafNodeSize
     , _drawNoScaleNodesFlag :: DrawNoScaleNodesFlag
     , _drawLegendSep        :: DrawLegendSep
+    , _drawItemLineWeight   :: DrawItemLineWeight
     } deriving (Read,Show)
 
 data Config a b = Config
@@ -252,6 +256,7 @@ data Config a b = Config
     , _birchDrawDiscretize      :: Maybe DrawDiscretize
     , _birchDrawScaleSaturation :: Maybe DrawScaleSaturation
     , _birchDrawFont            :: Maybe DrawFont
+    , _birchDrawItemLineWeight  :: Maybe DrawItemLineWeight
     , _birchTree                :: Tree (TreeNode (V.Vector a))
     , _birchMat                 :: Maybe b
     , _birchSimMat              :: Maybe (SimMatrix b)

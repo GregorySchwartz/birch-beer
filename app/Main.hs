@@ -138,6 +138,10 @@ main = do
         drawScaleSaturation' =
             fmap DrawScaleSaturation . unHelpful . drawScaleSaturation $ opts
         drawFont' = fmap DrawFont . unHelpful . drawFont $ opts
+        drawItemLineWeight' = fmap DrawItemLineWeight
+                            . unHelpful
+                            . drawItemLineWeight
+                            $ opts
         output'           =
             fromMaybe "dendrogram.svg" . unHelpful . output $ opts
 
@@ -204,6 +208,7 @@ main = do
                         , _birchDrawDiscretize      = drawDiscretize'
                         , _birchDrawScaleSaturation = drawScaleSaturation'
                         , _birchDrawFont            = drawFont'
+                        , _birchDrawItemLineWeight  = drawItemLineWeight'
                         , _birchTree                = tree
                         , _birchMat                 = Nothing
                         , _birchSimMat              = simMat

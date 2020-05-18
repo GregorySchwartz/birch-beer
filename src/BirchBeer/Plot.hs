@@ -165,12 +165,12 @@ dendrogramLeafLabel cm leaf =
 -- | Plot the leaf of a dendrogram as a collection of items.
 dendrogramLeafItem
     :: (TreeItem a)
-    => Maybe ItemColorMap -> V.Vector a -> Diagram B
-dendrogramLeafItem Nothing leaf = getItem black # centerX # pad 1.3 # alignT
-dendrogramLeafItem (Just (ItemColorMap cm)) leaf =
+    => Maybe ItemColorMap -> DrawItemLineWeight -> V.Vector a -> Diagram B
+dendrogramLeafItem Nothing w leaf = getItem w black # centerX # pad 1.3 # alignT
+dendrogramLeafItem (Just (ItemColorMap cm)) w leaf =
     (vcat . fmap hcat . Split.chunksOf 10 $ items) # centerX # pad 1.3 # alignT
   where
-    items  = fmap getItem colors
+    items  = fmap (getItem w) colors
     colors = sort
            . fmap (flip (Map.findWithDefault black) cm . getId)
            . V.toList
@@ -192,13 +192,17 @@ drawGraphLabel cm items =
     color = getMostFrequentColorList cm . F.toList $ items
 
 -- | Plot the node of a graph as a collection of items.
-drawGraphItem :: (TreeItem a) => Maybe ItemColorMap -> Seq.Seq a -> Diagram B
-drawGraphItem Nothing _ = getItem black # centerX # pad 1.3 # center
-drawGraphItem (Just (ItemColorMap cm)) node =
+drawGraphItem :: (TreeItem a)
+              => Maybe ItemColorMap
+              -> DrawItemLineWeight
+              -> Seq.Seq a
+              -> Diagram B
+drawGraphItem Nothing w _ = getItem w black # centerX # pad 1.3 # center
+drawGraphItem (Just (ItemColorMap cm)) w node =
     (vcat . fmap hcat . Split.chunksOf boxSize $ items) # center
   where
     boxSize = floor . sqrt . fromIntegral . Seq.length $ node
-    items  = fmap getItem colors
+    items  = fmap (getItem w) colors
     colors = sort
            . fmap (flip (Map.findWithDefault black) cm . getId)
            . F.toList
@@ -236,8 +240,8 @@ drawCollectionItem drawCollection (Just (ItemColorMap cm)) _ _ items =
         hide (axes . traversed)
 
 -- | Draw a single item.
-getItem :: Kolor -> Diagram B
-getItem color = circle 1 # lc black # fc color # lwL 0.1 -- Unfortunately cannot change to lwL or they disappear with certain scalings.
+getItem :: DrawItemLineWeight -> Kolor -> Diagram B
+getItem (DrawItemLineWeight w) color = circle 1 # lc black # fc color # lwL w
 
 -- | Legend text size.
 legendFontSize :: Double
@@ -495,10 +499,10 @@ drawGraphNode opts@(DrawConfig { _drawLeaf = (DrawItem drawType) }) cm ncm _ lgd
     background x@(CollectionGraph{}) = roundedRect (width (collectionDia x)) (height (collectionDia x)) 1 # fc white # lw none # scaleUToY (scaleVal * 1.1)
     background _       = circle 1 # fc white # lw none # scaleUToY scaleVal
     itemsDia              = getItemsDia $ _drawCollection opts
-    getItemsDia PieNone   = scaleUToY scaleVal $ drawGraphItem cm items
+    getItemsDia PieNone   = scaleUToY scaleVal $ drawGraphItem cm (_drawItemLineWeight opts) items
     getItemsDia PieChart  = mempty
     getItemsDia (CollectionGraph{}) = mempty
-    getItemsDia _         = scaleUToY (0.5 * scaleVal) $ drawGraphItem cm items
+    getItemsDia _         = scaleUToY (0.5 * scaleVal) $ drawGraphItem cm (_drawItemLineWeight opts) items
     collectionDia PieNone = mempty
     collectionDia x       =
         scaleUToY scaleVal $ drawCollectionItem x cm lgdm n items
@@ -543,8 +547,8 @@ drawGraphNode opts cm ncm mcm _ gr (n, Nothing) pos =
 -- | Plot the graph of a leaf.
 plotLeafGraph
     :: (Ord a, TreeItem a)
-    => Maybe ItemColorMap -> LeafGraph a -> IO (Diagram B)
-plotLeafGraph cm (LeafGraph gr) = do
+    => Maybe ItemColorMap -> DrawItemLineWeight -> LeafGraph a -> IO (Diagram B)
+plotLeafGraph cm ilw (LeafGraph gr) = do
     let params :: (TreeItem a) => G.GraphvizParams Int (G.Node, a) Double () (G.Node, a)
         params = G.defaultDiaParams
             { G.fmtEdge = (\(_, _, w) -> [G.Weight . G.Int . round $ 100 * w])
@@ -554,7 +558,7 @@ plotLeafGraph cm (LeafGraph gr) = do
     layout <- G.layoutGraph G.Neato gr
 
     let drawNode (_, x) pos =
-            ( getItem
+            ( getItem ilw
                 . maybe black ( Map.findWithDefault black (getId x)
                               . unItemColorMap
                               )
@@ -606,7 +610,7 @@ plotGraph legend opts cm ncm mcm lgm (ClusterGraph gr) = do
     lgdm <- sequence
           . fmap ( fmap LeafGraphDiaMap
                  . sequence
-                 . Map.map (plotLeafGraph cm)
+                 . Map.map (plotLeafGraph cm (_drawItemLineWeight opts))
                  . unLeafGraphMap
                  )
           $ lgm

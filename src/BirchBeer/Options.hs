@@ -46,6 +46,7 @@ data Options = Options
     , drawColors :: Maybe String <?> "([Nothing] | COLORS) Custom colors for the labels or continuous features. Will repeat if more labels than provided colors. For continuous feature plots, uses first two colors [high, low], defaults to [red, gray]. For instance: --draw-colors \"[\\\"#e41a1c\\\", \\\"#377eb8\\\"]\""
     , drawDiscretize :: Maybe String <?> "([Nothing] | COLORS | INT) Discretize colors by finding the nearest color for each item and node. For instance, --draw-discretize \"[\\\"#e41a1c\\\", \\\"#377eb8\\\"]\" will change all node and item colors to one of those two colors, based on Euclidean distance. If using \"--draw-discretize INT\", will instead take the default map and segment (or interpolate) it into INT colors, rather than a more continuous color scheme. May have unintended results when used with --draw-scale-saturation."
     , drawScaleSaturation :: Maybe Double <?> "([Nothing] | DOUBLE) Multiply the saturation value all nodes by this number in the HSV model. Useful for seeing more visibly the continuous colors by making the colors deeper against a gray scale."
+    , drawItemLineWeight :: Maybe Double <?> "([0.1] | DOUBLE) The line weight for items in the leaves if shown. Supplied as if there are too many items, the collection may look like a black box. Set to 0 to disable outlines of items to avoid this."
     , drawFont :: Maybe String <?> "([Arial] | FONT) Specify the font to use for the labels when plotting."
     , interactive :: Bool <?> "Display interactive tree."
     } deriving (Generic)
