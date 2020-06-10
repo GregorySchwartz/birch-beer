@@ -61,7 +61,7 @@ interactiveDiagram tree labelMap mat simMat = graphicalUI' "birch-beer" $ do
                         ]
     drawContinuousGene' <- TS.entry "[GENE] for DrawItem DrawContinuous"
     drawCollection' <-
-        TS.radioButton "Leaf shape" PieChart [PieRing, PieNone, CollectionGraph 1 0 []]
+        TS.radioButton "Leaf shape" PieChart [PieRing, IndividualItems, NoLeaf, Histogram, CollectionGraph 1 0 []]
     drawMark' <- TS.radioButton "Node mark" MarkNone [MarkModularity]
     drawPalette' <- TS.radioButton "Palette" Set1 [Hsv, Ryb]
     drawNodeNumber' <- fmap DrawNodeNumber $ TS.checkBox "Show node number"

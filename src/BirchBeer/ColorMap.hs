@@ -16,7 +16,9 @@ module BirchBeer.ColorMap
     , getLabelMapThresholdContinuous
     , labelToItemColorMap
     , getItemColorMapContinuous
+    , getItemValueMap
     , getItemColorMapSumContinuous
+    , getItemValueMapSum
     , getCombinedFeatures
     , getMarkColorMap
     , getNodeColorMapFromItems
@@ -206,6 +208,18 @@ getItemColorMapContinuous customColors gs mat =
   where
     (highColor, lowColor) = getHighLowColors customColors
 
+-- | Get the values of each item, where the value is determined by the average
+-- of features.
+getItemValueMap
+    :: (MatrixLike a) => [Feature] -> a -> Either String ItemValueMap
+getItemValueMap gs mat =
+  fmap ( ItemValueMap
+       . Map.fromList
+       . zip (fmap Id . V.toList . getRowNames $ mat)
+       )
+    . getCombinedFeatures gs
+    $ mat
+
 -- | For items with several needed features, combine together by averages.
 getCombinedFeatures :: (MatrixLike a)
                     => [Feature]
@@ -263,7 +277,7 @@ getLabelMapThresholdContinuous gs mat
              $ mat
 
 -- | Get the colors of each item, where the color is determined by the sum of
--- features in that cell.
+-- features in that item.
 getItemColorMapSumContinuous :: (MatrixLike a) => Maybe CustomColors -> a -> ItemColorMap
 getItemColorMapSumContinuous customColors mat =
     ItemColorMap
@@ -276,6 +290,18 @@ getItemColorMapSumContinuous customColors mat =
         $ mat
   where
     (highColor, lowColor) = getHighLowColors customColors
+
+-- | Get the value of each item, where the value is determined by the sum of
+-- features in that item.
+getItemValueMapSum :: (MatrixLike a) => a -> ItemValueMap
+getItemValueMapSum mat =
+    ItemValueMap
+        . Map.fromList
+        . zip (fmap Id . V.toList . getRowNames $ mat)
+        . fmap sum
+        . S.toRowsL
+        . getMatrix
+        $ mat
 
 -- | Use the outgoing edges of a node to define the mark around the node.
 -- Min max normalization.

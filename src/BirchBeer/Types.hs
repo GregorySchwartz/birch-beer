@@ -163,6 +163,9 @@ newtype LabelColorMap = LabelColorMap
 newtype ItemColorMap = ItemColorMap
     { unItemColorMap :: Map Id Kolor
     } deriving (Read,Show)
+newtype ItemValueMap = ItemValueMap
+    { unItemValueMap :: Map Id Double
+    } deriving (Read,Show)
 newtype MarkColorMap = MarkColorMap
     { unMarkColorMap :: Map G.Node (AlphaColour Double)
     } deriving (Read,Show)
@@ -212,7 +215,7 @@ data DrawItemType
     | DrawDiversity
     deriving (Read,Show)
 data DrawLeaf       = DrawItem DrawItemType | DrawText deriving (Read, Show)
-data DrawCollection = CollectionGraph Double Double [Int] | PieRing | PieChart | PieNone deriving (Read, Show)
+data DrawCollection = CollectionGraph Double Double [Int] | PieRing | PieChart | NoLeaf | Histogram | IndividualItems deriving (Read, Show)
 data DrawNodeMark   = MarkModularity | MarkSignificance | MarkNone deriving (Read, Show)
 
 data Palette = Set1 | Ryb | Hsv | Hcl deriving (Read, Show)

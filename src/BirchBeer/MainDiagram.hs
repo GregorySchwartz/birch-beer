@@ -182,6 +182,21 @@ mainDiagram config = do
                 fmap (fmap (getItemColorMapSumContinuous drawColors')) mat
             _                           -> return defaultGetItemColorMap
 
+    -- Get the item value map.
+    itemValueMap <-
+        case drawLeaf' of
+            DrawItem (DrawContinuous x) ->
+                fmap
+                    ( fmap ( either error id
+                           . getItemValueMap
+                              (fmap Feature x)
+                           )
+                    )
+                    mat
+            DrawItem DrawSumContinuous  ->
+                fmap (fmap getItemValueMapSum) mat
+            _                           -> return Nothing
+
     -- Get the node color map.
     let itemColorMap = fmap ( ItemColorMap
                             . discretizeColorMapHelper
@@ -265,7 +280,9 @@ mainDiagram config = do
     plot <- plotGraph
                 legend
                 drawConfig
+                drawFont'
                 itemColorMap
+                itemValueMap
                 nodeColorMap
                 markColorMap
                 leafGraphMap

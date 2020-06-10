@@ -40,6 +40,7 @@ import Graphics.SVGFonts
 import Math.Clustering.Hierarchical.Spectral.Types (getClusterItemsDend)
 import Plots
 import Plots.Axis.ColourBar
+import Plots.Axis.Line
 import Plots.Legend
 import qualified Control.Foldl as Fold
 import qualified Control.Lens as L
@@ -213,15 +214,43 @@ drawCollectionItem
     :: (TreeItem a)
     => DrawCollection
     -> Maybe ItemColorMap
+    -> Maybe (ItemValueMap, (Maybe Double, Maybe Double))
     -> Maybe LeafGraphDiaMap
     -> G.Node
     -> Seq.Seq a
     -> Diagram B
-drawCollectionItem (CollectionGraph{}) _ Nothing _ _ = mempty
-drawCollectionItem (CollectionGraph{}) _ (Just (LeafGraphDiaMap lgdm)) n _ =
+drawCollectionItem (CollectionGraph{}) _ _ Nothing _ _ = mempty
+drawCollectionItem (CollectionGraph{}) _ _ (Just (LeafGraphDiaMap lgdm)) n _ =
     fromMaybe mempty . Map.lookup n $ lgdm
-drawCollectionItem _ Nothing _ _ _ = mempty
-drawCollectionItem drawCollection (Just (ItemColorMap cm)) _ _ items =
+drawCollectionItem _ Nothing _ _ _ _ = mempty
+drawCollectionItem Histogram _ (Just (ItemValueMap vm, (minVal, maxVal))) _ _ items =
+    center $ renderAxis $ r2Axis &~ do
+      let values = fmap (flip (Map.findWithDefault 0) vm . getId)
+                      . F.toList
+                      $ items
+
+      hideGridLines
+      axisStyle .= vividColours
+      xAxis . axisLineType .= MiddleAxisLine
+      yAxis . axisLineType .= LeftAxisLine
+      xAxis . axisLineStyle .= mempty # lwL 1
+      yAxis . axisLineStyle .= mempty # lw none
+      -- xAxis . tickLabel . tickLabelPositions %= (\x -> [head x, last x])
+      -- yAxis . tickLabel . tickLabelPositions %= (\x -> [head x, last x])
+      xAxis . tickLabel . visible .= False
+      yAxis . tickLabel . visible .= False
+      
+      hide (yAxis . minorTicks)
+      hide (yAxis . majorTicks)
+      hide (xAxis . minorTicks)
+      hide (xAxis . majorTicks)
+      tickLabelStyle .= mempty # fontSize (local 15) # recommendFillColor black
+
+      histogramPlot values $ do
+        plotColor .= black
+        binRange .= Just (fromMaybe 0 minVal, fromMaybe 0 maxVal)
+
+drawCollectionItem drawCollection (Just (ItemColorMap cm)) _ _ _ items =
     renderAxis $ polarAxis &~ do
         let colorWedge :: (Kolor, Double) -> State (Plot (Wedge Double) b) ()
             colorWedge colorPair = do
@@ -233,6 +262,7 @@ drawCollectionItem drawCollection (Just (ItemColorMap cm)) _ _ items =
                        . F.toList
                        $ items
 
+        axisStyle .= vividColours
         piePlot colorPairs snd $ onWedges colorWedge
         case drawCollection of
             PieChart -> return ()
@@ -436,12 +466,13 @@ drawGraphPath opts ncm gr (n1, _) p1 (n2, _) p2 _ _ =
     drawNode n p = drawGraphNode  -- DrawText is irrelevant here.
                     (resetLeafSize opts)
                     Nothing
+                    Nothing
                     ncm
                     Nothing
                     Nothing
                     gr
                     (n, Nothing)
-                    p 
+                    p
     resetLeafSize x = x { _drawMaxLeafNodeSize = DrawMaxLeafNodeSize  -- Reset the leaf node size to behave like an inner node.
                                                . unDrawMaxNodeSize
                                                . _drawMaxNodeSize
@@ -456,10 +487,26 @@ scaleAxis dia = if width dia > height dia
                     then scaleUToX
                     else scaleUToY
 
+-- | Get the relative size of the node for inner nodes.
+getNodeSize :: (TreeItem a)
+            => DrawConfig
+            -> ClusterGraph a
+            -> Seq.Seq a
+            -> Double
+getNodeSize opts@(DrawConfig { _drawNoScaleNodesFlag = DrawNoScaleNodesFlag False}) gr =
+    isTo totalItems (unDrawMaxNodeSize . _drawMaxNodeSize $ opts)
+        . fromIntegral
+        . Seq.length
+  where
+    totalItems = fromIntegral . Seq.length . getGraphLeafItems gr $ 0
+getNodeSize opts@(DrawConfig { _drawNoScaleNodesFlag = DrawNoScaleNodesFlag True}) gr =
+    const (unDrawMaxNodeSize . _drawMaxNodeSize $ opts)
+
 -- | Draw the final node of a graph.
 drawGraphNode :: (TreeItem a)
               => DrawConfig
               -> Maybe ItemColorMap
+              -> Maybe (ItemValueMap, (Maybe Double, Maybe Double))
               -> Maybe NodeColorMap
               -> Maybe MarkColorMap
               -> Maybe LeafGraphDiaMap
@@ -467,7 +514,7 @@ drawGraphNode :: (TreeItem a)
               -> (G.Node, Maybe (Seq.Seq a))
               -> P2 Double
               -> Diagram B
-drawGraphNode opts@(DrawConfig { _drawLeaf = DrawText }) cm _ _ _ gr (n, Just items) pos =
+drawGraphNode opts@(DrawConfig { _drawLeaf = DrawText }) cm _ _ _ _ gr (n, Just items) pos =
     ((textDia dnn # fontSizeL (smallestAxis dia)) <> dia <> background)
         # scaleUToX scaleVal
         # moveTo pos
@@ -483,7 +530,7 @@ drawGraphNode opts@(DrawConfig { _drawLeaf = DrawText }) cm _ _ _ gr (n, Just it
                 then maxLeafNodeSize
                 else getScaledLeafSize maxClusterSize' maxLeafNodeSize items
     maxClusterSize' = maxClusterSize . unClusterGraph $ gr
-drawGraphNode opts@(DrawConfig { _drawLeaf = (DrawItem drawType) }) cm ncm _ lgdm gr (n, Just items) pos =
+drawGraphNode opts@(DrawConfig { _drawLeaf = (DrawItem drawType) }) cm vm ncm _ lgdm gr (n, Just items) pos =
     ((textDia dnn # fontSizeL (smallestAxis dia)) <> dia) # moveTo pos
   where
     dia = drawLeafDia drawType
@@ -495,17 +542,26 @@ drawGraphNode opts@(DrawConfig { _drawLeaf = (DrawItem drawType) }) cm ncm _ lgd
                    <> itemsDia
                    <> background (_drawCollection opts)
                     )
-    background PieNone = roundedRect (width itemsDia) (height itemsDia) 1 # fc white # lw none # scaleUToY (scaleVal * 1.1)
+    background IndividualItems = roundedRect (width itemsDia) (height itemsDia) 1 # fc white # lw none # scaleUToY (scaleVal * 1.1)
     background x@(CollectionGraph{}) = roundedRect (width (collectionDia x)) (height (collectionDia x)) 1 # fc white # lw none # scaleUToY (scaleVal * 1.1)
+    background x@Histogram           = roundedRect (width (collectionDia x)) (height (collectionDia x)) 1 # fc white # lw none # scaleUToY (scaleVal * 1.1)
+    background x@NoLeaf              = mempty
     background _       = circle 1 # fc white # lw none # scaleUToY scaleVal
     itemsDia              = getItemsDia $ _drawCollection opts
-    getItemsDia PieNone   = scaleUToY scaleVal $ drawGraphItem cm (_drawItemLineWeight opts) items
+    getItemsDia IndividualItems   = scaleUToY scaleVal $ drawGraphItem cm (_drawItemLineWeight opts) items
     getItemsDia PieChart  = mempty
+    getItemsDia Histogram = mempty
+    getItemsDia NoLeaf   = mempty
     getItemsDia (CollectionGraph{}) = mempty
     getItemsDia _         = scaleUToY (0.5 * scaleVal) $ drawGraphItem cm (_drawItemLineWeight opts) items
-    collectionDia PieNone = mempty
+    collectionDia IndividualItems = mempty
+    collectionDia NoLeaf =
+      circle 1
+        # fc (getNodeColor ncm n)
+        # lw none
+        # scaleUToY (getNodeSize opts gr items)
     collectionDia x       =
-        scaleUToY scaleVal $ drawCollectionItem x cm lgdm n items
+        scaleUToY scaleVal $ drawCollectionItem x cm vm lgdm n items
     scaleVal = if unDrawNoScaleNodesFlag . _drawNoScaleNodesFlag $ opts
                 then maxLeafNodeSize
                 else getScaledLeafSize maxClusterSize' maxLeafNodeSize items
@@ -514,11 +570,11 @@ drawGraphNode opts@(DrawConfig { _drawLeaf = (DrawItem drawType) }) cm ncm _ lgd
     textDia True  = text (show n) # fc (bool black white . isNothing $ cm)
     textDia False = mempty
     dnn = unDrawNodeNumber . _drawNodeNumber $ opts
-drawGraphNode opts cm ncm mcm _ gr (n, Nothing) pos =
+drawGraphNode opts cm _ ncm mcm _ gr (n, Nothing) pos =
     (mark mcm <> mainNode) # moveTo pos
   where
     mainNode = ((textDia dnn # fontSizeL 1) <> mainDia)
-             # scaleUToY (getNodeSize (_drawNoScaleNodesFlag opts) items)
+             # scaleUToY (getNodeSize opts gr items)
     mainDia = circle 1 # fc color # rootDiffer n
     mark :: Maybe MarkColorMap -> Diagram B
     mark Nothing = mempty
@@ -535,14 +591,6 @@ drawGraphNode opts cm ncm mcm _ gr (n, Nothing) pos =
     rootDiffer n = lw none
     color = getNodeColor ncm n
     items = getGraphLeafItems gr n
-    getNodeSize :: DrawNoScaleNodesFlag -> Seq.Seq a -> Double
-    getNodeSize (DrawNoScaleNodesFlag False) =
-        isTo totalItems (unDrawMaxNodeSize . _drawMaxNodeSize $ opts)
-            . fromIntegral
-            . Seq.length
-    getNodeSize (DrawNoScaleNodesFlag True) =
-        const (unDrawMaxNodeSize . _drawMaxNodeSize $ opts)
-    totalItems = fromIntegral . Seq.length . getGraphLeafItems gr $ 0
 
 -- | Plot the graph of a leaf.
 plotLeafGraph
@@ -588,13 +636,15 @@ plotGraph
     :: (Ord a, TreeItem a)
     => Maybe (Diagram B)
     -> DrawConfig
+    -> DrawFont
     -> Maybe ItemColorMap
+    -> Maybe ItemValueMap
     -> Maybe NodeColorMap
     -> Maybe MarkColorMap
     -> Maybe (LeafGraphMap T.Text)
     -> ClusterGraph a
     -> IO (Diagram B)
-plotGraph legend opts cm ncm mcm lgm (ClusterGraph gr) = do
+plotGraph legend opts font' cm vm ncm mcm lgm (ClusterGraph gr) = do
     let numClusters :: Double
         numClusters = fromIntegral . Seq.length $ getGraphLeaves gr 0
         maxNodeSize = unDrawMaxNodeSize . _drawMaxNodeSize $ opts
@@ -603,6 +653,7 @@ plotGraph legend opts cm ncm mcm lgm (ClusterGraph gr) = do
             { G.fmtEdge = (\(_, _, !w) -> [G.Len . fromMaybe 0 . L.view edgeDistance $ w])
             , G.globalAttributes = [G.GraphAttrs { G.attrs = [G.Sep . G.DVal $ maxNodeSize / 2] }]
             }
+        vm' = fmap (\x -> (x, Fold.fold ((,) <$> Fold.minimum <*> Fold.maximum) . Map.elems . unItemValueMap $ x)) vm
 
     layout <- G.layoutGraph' params G.TwoPi gr
 
@@ -618,7 +669,7 @@ plotGraph legend opts cm ncm mcm lgm (ClusterGraph gr) = do
     let treeDia =
             G.drawGraph'
                 G.VerticesOnTop
-                (drawGraphNode opts cm ncm mcm lgdm (ClusterGraph gr))
+                (drawGraphNode opts cm vm' ncm mcm lgdm (ClusterGraph gr))
                 (drawGraphPath opts ncm (ClusterGraph gr))
                 layout
         dia = case legend of
@@ -628,7 +679,7 @@ plotGraph legend opts cm ncm mcm lgm (ClusterGraph gr) = do
                         . hsep
                             (unDrawLegendSep . _drawLegendSep $ opts)
                         $   [ alignY 1.5 . lw 0.3 . center . scaleUToX (width treeDia / 8) $ l
-                            , alignT . center $ treeDia
+                            , alignT . center . font (unDrawFont font') $ treeDia
                             ]
 
     return dia
