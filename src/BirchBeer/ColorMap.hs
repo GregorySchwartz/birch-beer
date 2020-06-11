@@ -40,6 +40,7 @@ import Data.Colour (AffineSpace (..), withOpacity, blend)
 import Data.Colour.Names (black)
 import Data.Colour.RGBSpace.HSV (hsv, hsvView)
 import Data.Colour.Palette.ColorSet (rybColor)
+import Data.Foldable (foldl')
 import Data.Function (on)
 import Data.Int (Int32)
 import Data.Maybe (fromMaybe, isNothing)
@@ -231,7 +232,7 @@ getCombinedFeatures gs mat
                        <> (show . fmap unFeature $ gs)
                        <> " does not exist."
     | otherwise = Right
-                . fmap ((/ n) . sum)
+                . fmap ((/ n) . foldl' (+) 0)
                 . S.toRowsL
                 . S.fromColsV
                 . fmap (S.extractCol (getMatrix mat))
@@ -284,7 +285,7 @@ getItemColorMapSumContinuous customColors mat =
         . Map.fromList
         . zip (fmap Id . V.toList . getRowNames $ mat)
         . getContinuousColor highColor lowColor
-        . fmap sum
+        . fmap (foldl' (+) 0)
         . S.toRowsL
         . getMatrix
         $ mat
@@ -298,7 +299,7 @@ getItemValueMapSum mat =
     ItemValueMap
         . Map.fromList
         . zip (fmap Id . V.toList . getRowNames $ mat)
-        . fmap sum
+        . fmap (foldl' (+) 0)
         . S.toRowsL
         . getMatrix
         $ mat

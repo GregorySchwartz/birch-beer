@@ -223,33 +223,8 @@ drawCollectionItem (CollectionGraph{}) _ _ Nothing _ _ = mempty
 drawCollectionItem (CollectionGraph{}) _ _ (Just (LeafGraphDiaMap lgdm)) n _ =
     fromMaybe mempty . Map.lookup n $ lgdm
 drawCollectionItem _ Nothing _ _ _ _ = mempty
-drawCollectionItem Histogram _ (Just (ItemValueMap vm, (minVal, maxVal))) _ _ items =
-    center $ renderAxis $ r2Axis &~ do
-      let values = fmap (flip (Map.findWithDefault 0) vm . getId)
-                      . F.toList
-                      $ items
-
-      hideGridLines
-      axisStyle .= vividColours
-      xAxis . axisLineType .= MiddleAxisLine
-      yAxis . axisLineType .= LeftAxisLine
-      xAxis . axisLineStyle .= mempty # lwL 1
-      yAxis . axisLineStyle .= mempty # lw none
-      -- xAxis . tickLabel . tickLabelPositions %= (\x -> [head x, last x])
-      -- yAxis . tickLabel . tickLabelPositions %= (\x -> [head x, last x])
-      xAxis . tickLabel . visible .= False
-      yAxis . tickLabel . visible .= False
-      
-      hide (yAxis . minorTicks)
-      hide (yAxis . majorTicks)
-      hide (xAxis . minorTicks)
-      hide (xAxis . majorTicks)
-      tickLabelStyle .= mempty # fontSize (local 15) # recommendFillColor black
-
-      histogramPlot values $ do
-        plotColor .= black
-        binRange .= Just (fromMaybe 0 minVal, fromMaybe 0 maxVal)
-
+drawCollectionItem Histogram _ (Just (vm, range)) _ _ items
+  = plotHistogram vm range items
 drawCollectionItem drawCollection (Just (ItemColorMap cm)) _ _ _ items =
     renderAxis $ polarAxis &~ do
         let colorWedge :: (Kolor, Double) -> State (Plot (Wedge Double) b) ()
@@ -630,6 +605,46 @@ plotLeafGraph cm ilw (LeafGraph gr) = do
 
     return $ treeDia # center
 
+-- | Plot the histogram of a leaf.
+plotHistogram :: (TreeItem a)
+              => ItemValueMap
+              -> (Maybe Double, Maybe Double)
+              -> Seq.Seq a
+              -> Diagram B
+plotHistogram (ItemValueMap vm) (minVal, maxVal) items
+  | isNothing minVal || isNothing maxVal = mempty
+  | fromMaybe 0 minVal >= fromMaybe 0 maxVal = mempty
+  | otherwise =
+      center $ renderAxis $ r2Axis &~ do
+        let values = fmap (flip (Map.findWithDefault 0) vm . getId)
+                        . F.toList
+                        $ items
+
+        hideGridLines
+        axisStyle .= vividColours
+        xAxis . axisLineType .= MiddleAxisLine
+        yAxis . axisLineType .= LeftAxisLine
+        xAxis . axisLineStyle .= mempty # lwL 1
+        yAxis . axisLineStyle .= mempty # lw none
+        -- xAxis . tickLabel . tickLabelPositions %= (\x -> [head x, last x])
+        -- yAxis . tickLabel . tickLabelPositions %= (\x -> [head x, last x])
+        xAxis . tickLabel . visible .= False
+        yAxis . tickLabel . visible .= False
+
+        hide (yAxis . minorTicks)
+        hide (yAxis . majorTicks)
+        hide (xAxis . minorTicks)
+        hide (xAxis . majorTicks)
+        tickLabelStyle .= mempty # fontSize (local 15) # recommendFillColor black
+
+        histogramPlot values $ do
+          plotColor .= black
+          numBins .= 10
+          binRange .= Just ( (\x -> if x > 0 then 0 else x)  -- No value greater than 0
+                           $ fromMaybe 0 minVal
+                           , fromIntegral . ceiling $ fromMaybe 0 maxVal  -- Try to eliminate rounding errors.
+                           )
+
 -- | Plot a graph rather than a traditional tree. Uses only info in leaves
 -- rather than a tree which stores all leaves.
 plotGraph
@@ -653,7 +668,7 @@ plotGraph legend opts font' cm vm ncm mcm lgm (ClusterGraph gr) = do
             { G.fmtEdge = (\(_, _, !w) -> [G.Len . fromMaybe 0 . L.view edgeDistance $ w])
             , G.globalAttributes = [G.GraphAttrs { G.attrs = [G.Sep . G.DVal $ maxNodeSize / 2] }]
             }
-        vm' = fmap (\x -> (x, Fold.fold ((,) <$> Fold.minimum <*> Fold.maximum) . Map.elems . unItemValueMap $ x)) vm
+        vm' = fmap (\x -> (x, Fold.fold ((,) <$> Fold.minimum <*> Fold.maximum) . unItemValueMap $ x)) vm
 
     layout <- G.layoutGraph' params G.TwoPi gr
 
