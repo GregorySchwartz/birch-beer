@@ -519,7 +519,7 @@ drawGraphNode opts@(DrawConfig { _drawLeaf = (DrawItem drawType) }) cm vm ncm _ 
                     )
     background IndividualItems = roundedRect (width itemsDia) (height itemsDia) 1 # fc white # lw none # scaleUToY (scaleVal * 1.1)
     background x@(CollectionGraph{}) = roundedRect (width (collectionDia x)) (height (collectionDia x)) 1 # fc white # lw none # scaleUToY (scaleVal * 1.1)
-    background x@Histogram           = roundedRect (width (collectionDia x)) (height (collectionDia x)) 1 # fc white # lw none # scaleUToY (scaleVal * 1.1)
+    background x@Histogram           = roundedRect (width (collectionDia x)) (height (collectionDia x)) 1 # fc white # lw none # opacity 0.5 # scaleUToY (scaleVal * 1.1)
     background x@NoLeaf              = mempty
     background _       = circle 1 # fc white # lw none # scaleUToY scaleVal
     itemsDia              = getItemsDia $ _drawCollection opts
@@ -624,7 +624,7 @@ plotHistogram (ItemValueMap vm) (minVal, maxVal) items
         axisStyle .= vividColours
         xAxis . axisLineType .= MiddleAxisLine
         yAxis . axisLineType .= LeftAxisLine
-        xAxis . axisLineStyle .= mempty # lwL 1
+        xAxis . axisLineStyle .= mempty # lwL 0.5 # opacity 0.25
         yAxis . axisLineStyle .= mempty # lw none
         -- xAxis . tickLabel . tickLabelPositions %= (\x -> [head x, last x])
         -- yAxis . tickLabel . tickLabelPositions %= (\x -> [head x, last x])
@@ -639,7 +639,7 @@ plotHistogram (ItemValueMap vm) (minVal, maxVal) items
 
         histogramPlot values $ do
           plotColor .= black
-          numBins .= 10
+          numBins .= 20
           binRange .= Just ( (\x -> if x > 0 then 0 else x)  -- No value greater than 0
                            $ fromMaybe 0 minVal
                            , fromIntegral . ceiling $ fromMaybe 0 maxVal  -- Try to eliminate rounding errors.
@@ -660,7 +660,12 @@ plotGraph
     -> ClusterGraph a
     -> IO (Diagram B)
 plotGraph legend opts font' cm vm ncm mcm lgm (ClusterGraph gr) = do
-    let numClusters :: Double
+    let
+        items = Set.fromList
+              . fmap getId
+              . F.toList
+              $ getGraphLeafItems (ClusterGraph gr) 0
+        numClusters :: Double
         numClusters = fromIntegral . Seq.length $ getGraphLeaves gr 0
         maxNodeSize = unDrawMaxNodeSize . _drawMaxNodeSize $ opts
         params :: (TreeItem a) => G.GraphvizParams Int (G.Node, Maybe (Seq.Seq a)) ClusterEdge () (G.Node, Maybe (Seq.Seq a))
@@ -668,7 +673,15 @@ plotGraph legend opts font' cm vm ncm mcm lgm (ClusterGraph gr) = do
             { G.fmtEdge = (\(_, _, !w) -> [G.Len . fromMaybe 0 . L.view edgeDistance $ w])
             , G.globalAttributes = [G.GraphAttrs { G.attrs = [G.Sep . G.DVal $ maxNodeSize / 2] }]
             }
-        vm' = fmap (\x -> (x, Fold.fold ((,) <$> Fold.minimum <*> Fold.maximum) . unItemValueMap $ x)) vm
+        vm' = fmap ( \x -> ( x
+                           , Fold.fold ((,) <$> Fold.minimum <*> Fold.maximum)
+                           . fmap snd
+                           . filter (flip Set.member items . fst)
+                           . Map.toList
+                           . unItemValueMap
+                           $ x)
+                   )
+                   vm
 
     layout <- G.layoutGraph' params G.TwoPi gr
 
