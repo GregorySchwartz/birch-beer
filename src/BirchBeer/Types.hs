@@ -218,7 +218,7 @@ data DrawLeaf       = DrawItem DrawItemType | DrawText deriving (Read, Show)
 data DrawCollection = CollectionGraph Double Double [Int] | PieRing | PieChart | NoLeaf | Histogram | IndividualItems deriving (Read, Show)
 data DrawNodeMark   = MarkModularity | MarkSignificance | MarkNone deriving (Read, Show)
 
-data Palette = Set1 | Ryb | Hsv | Hcl deriving (Read, Show)
+data Palette = Set1 | Blues | Ryb | Hsv | Hcl deriving (Read, Show)
 data DrawDiscretize = CustomColorMap [Kolor] | SegmentColorMap Int
                       deriving (Read, Show)
 

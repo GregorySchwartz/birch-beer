@@ -122,6 +122,11 @@ getLabelColorMap Set1 (LabelMap lm) =
   where
     colors = interpColors (Set.size labels) $ Brewer.brewerSet Brewer.Set1 9
     labels = Set.fromList . Map.elems $ lm
+getLabelColorMap Blues (LabelMap lm) =
+    LabelColorMap . Map.fromList . flip zip colors . Set.toAscList $ labels
+  where
+    colors = interpColors (Set.size labels) $ Brewer.brewerSet Brewer.Blues 9
+    labels = Set.fromList . Map.elems $ lm
 getLabelColorMap Ryb (LabelMap lm) =
     LabelColorMap . Map.fromList . flip zip colors . Set.toAscList $ labels
   where
