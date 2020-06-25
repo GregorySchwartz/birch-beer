@@ -125,7 +125,7 @@ getLabelColorMap Set1 (LabelMap lm) =
 getLabelColorMap Blues (LabelMap lm) =
     LabelColorMap . Map.fromList . flip zip colors . Set.toAscList $ labels
   where
-    colors = interpColors (Set.size labels) $ Brewer.brewerSet Brewer.Blues 9
+    colors = interpColors (Set.size labels) . drop 1 $ Brewer.brewerSet Brewer.Blues 9  -- First color too close to white
     labels = Set.fromList . Map.elems $ lm
 getLabelColorMap Ryb (LabelMap lm) =
     LabelColorMap . Map.fromList . flip zip colors . Set.toAscList $ labels
