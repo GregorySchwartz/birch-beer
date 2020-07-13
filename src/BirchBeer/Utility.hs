@@ -37,6 +37,7 @@ module BirchBeer.Utility
     , closestColor
     , getNodeAssignments
     , printNodeAssignments
+    , smartValue
     ) where
 
 -- Remote
@@ -403,3 +404,8 @@ printNodeAssignments cr = header <> "\n" <> body
                    )
                  )
          $ cr
+
+-- | Get a new value based on a collection of values and the desired number of
+-- MADs from the median.
+smartValue :: Double -> V.Vector Double -> Double
+smartValue n xs = median S.s xs + (n * mad S.s xs)

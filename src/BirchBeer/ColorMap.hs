@@ -255,7 +255,7 @@ getCombinedFeatures gs mat
 -- for combinatorical labeling, but only reports those present in the data set.
 getLabelMapThresholdContinuous
     :: (MatrixLike a)
-    => [(Feature, Double)] -> a -> LabelMap
+    => [(Feature, Threshold)] -> a -> LabelMap
 getLabelMapThresholdContinuous gs mat
     | any (isNothing . getCol . fst) gs = LabelMap Map.empty
     | otherwise = LabelMap
@@ -264,17 +264,20 @@ getLabelMapThresholdContinuous gs mat
                 . getCutoffLabels
                 $ gs'
   where
-    getCutoffLabels :: [(Feature, Double)] -> [Label]
+    getCutoffLabels :: [(Feature, Threshold)] -> [Label]
     getCutoffLabels =
         fmap (Label . List.foldl1' (\acc x -> acc <> " " <> x))
             . List.transpose
             . fmap (uncurry getCutoffLabelFeature)
     getCutoffLabelFeature g v =
-        fmap (\x -> unFeature g <> " " <> if x > v then "high" else "low")
+        (\(!xs, !v') -> fmap (\x -> unFeature g <> " " <> if x > v' then "high" else "low") xs)
+            . (\xs -> (xs, fromThreshold v $ V.fromList xs))
             . S.toDenseListSV
             . flip S.extractCol (colErr g $ getCol g)
             . getMatrix
             $ mat
+    fromThreshold (Exact x) _ = x
+    fromThreshold (MadMedian x) xs = smartValue x xs
     gs' = List.sortBy (compare `on` fst) gs
     colErr g = fromMaybe (error $ "Feature " <> T.unpack (unFeature g) <> " does not exist.")
     getCol g = V.elemIndex g

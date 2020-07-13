@@ -207,10 +207,12 @@ newtype V = V Double
 data (MatrixLike a) => SimMatrix a = SimilarityMatrix a | B2Matrix a
 
 -- Advanced
+data Threshold = Exact Double | MadMedian Double deriving (Read, Show)
+
 data DrawItemType
     = DrawLabel
     | DrawContinuous [T.Text]
-    | DrawThresholdContinuous [(T.Text, Double)]
+    | DrawThresholdContinuous [(T.Text, Threshold)]
     | DrawSumContinuous
     | DrawDiversity
     deriving (Read,Show)

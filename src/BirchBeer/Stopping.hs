@@ -264,7 +264,7 @@ smartCutDend n f dend = median S.s xs + (n * mad S.s xs)
 -- | Get the smart cut value of a tree.
 smartCut ::
   Double -> (Tree (TreeNode a) -> Maybe Double) -> Tree (TreeNode a) -> Double
-smartCut n f tree = median S.s xs + (n * mad S.s xs)
+smartCut n f tree = smartValue n xs
   where
     xs = V.fromList . catMaybes . getNodeInfo f $ tree
 
