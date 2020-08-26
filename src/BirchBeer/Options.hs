@@ -48,6 +48,7 @@ data Options = Options
     , drawScaleSaturation :: Maybe Double <?> "([Nothing] | DOUBLE) Multiply the saturation value all nodes by this number in the HSV model. Useful for seeing more visibly the continuous colors by making the colors deeper against a gray scale."
     , drawItemLineWeight :: Maybe Double <?> "([0.1] | DOUBLE) The line weight for items in the leaves if shown. Supplied as if there are too many items, the collection may look like a black box. Set to 0 to disable outlines of items to avoid this."
     , drawFont :: Maybe String <?> "([Arial] | FONT) Specify the font to use for the labels when plotting."
+    , drawBarBounds :: Bool <?> "Whether to plot only the minimum and maximum ticks for the color bars."
     , interactive :: Bool <?> "Display interactive tree."
     } deriving (Generic)
 
@@ -70,6 +71,7 @@ modifiers = lispCaseModifiers { shortNameModifier = short }
     short "drawNodeNumber"       = Just 'N'
     short "drawPalette"          = Just 'Y'
     short "drawScaleSaturation"  = Just 'V'
+    short "drawBarBounds"        = Nothing
     short "elbowCut"             = Nothing
     short "inputMatrix"          = Just 'X'
     short "interactive"          = Just 'I'

@@ -42,6 +42,7 @@ import Plots
 import Plots.Axis.ColourBar
 import Plots.Axis.Line
 import Plots.Legend
+import Safe (headMay, lastMay)
 import qualified Control.Foldl as Fold
 import qualified Control.Lens as L
 import qualified Data.Clustering.Hierarchical as HC
@@ -270,10 +271,12 @@ plotLabelLegend (DrawFont font') = flip (drawLegend emptyBox) legendOpts
         )
 
 -- | Continous style of color bar.
-cbOpts :: DrawFont -> Maybe DiscreteColorMap -> ColourBar B Double
-cbOpts (DrawFont font') discreteColors =
+cbOpts
+  :: DrawFont -> DrawBarBounds -> Maybe DiscreteColorMap -> ColourBar B Double
+cbOpts (DrawFont font') dbb discreteColors =
   over tickLabelStyle (font font' # fontSizeL legendFontSize)
     . over colourBarStyle (lwL (0.2 * legendFontSize))
+    . setTickBounds dbb
     . set majorTicksStyle (mempty # lwL (0.2 * legendFontSize))
     . set (minorTicks . visible) False
     . set (majorGridLines . visible) False
@@ -285,18 +288,34 @@ cbOpts (DrawFont font') discreteColors =
               discreteColors
       )
     $ defColourBar
+  where
+    setTickBounds (DrawBarBounds True) =
+      set
+        majorTicksFunction
+        (\(!lb, !ub)
+        -> (\xs -> fromMaybe []
+               . sequence
+               $ [ headMay . dropWhile (< lb) $ xs
+                 , headMay . dropWhile (> ub) . reverse $ xs
+                 ]
+           )
+           . linearMajorTicks 5
+           $ (lb, ub)
+        )
+    setTickBounds (DrawBarBounds False) = id
 
 -- | Get the legend for a feature. Bar from
 -- https://archives.haskell.org/projects.haskell.org/diagrams/blog/2013-12-03-Palette1.html
 plotContinuousLegend :: (MatrixLike a)
                      => DrawFont
+                     -> DrawBarBounds
                      -> Maybe CustomColors
                      -> Maybe DiscreteColorMap
                      -> DrawScaleSaturation
                      -> [Feature]
                      -> a
                      -> Diagram B
-plotContinuousLegend (DrawFont font') customColors discreteColors sat gs mat =
+plotContinuousLegend (DrawFont font') dbb customColors discreteColors sat gs mat =
     either text dia $ getCombinedFeatures gs $ mat
   where
     dia fs = vsep
@@ -306,7 +325,7 @@ plotContinuousLegend (DrawFont font') customColors discreteColors sat gs mat =
                # fontSizeL legendFontSize
                , rotateBy (3 / 4)
                $ renderColourBar
-                   (cbOpts (DrawFont font') discreteColors)
+                   (cbOpts (DrawFont font') dbb discreteColors)
                    cm
                    (fromMaybe 0 minVal, fromMaybe 0 maxVal)
                    100
@@ -326,17 +345,18 @@ plotContinuousLegend (DrawFont font') customColors discreteColors sat gs mat =
 -- https://archives.haskell.org/projects.haskell.org/diagrams/blog/2013-12-03-Palette1.html
 plotSumContinuousLegend :: (MatrixLike a)
                         => DrawFont
+                        -> DrawBarBounds
                         -> Maybe CustomColors
                         -> Maybe DiscreteColorMap
                         -> DrawScaleSaturation
                         -> a
                         -> Diagram B
-plotSumContinuousLegend (DrawFont font') customColors discreteColors sat mat = vsep
+plotSumContinuousLegend (DrawFont font') dbb customColors discreteColors sat mat = vsep
         (legendFontSize * 1.2)
         [ text "Total Sum" # font font' # fontSizeL legendFontSize
         , rotateBy (3 / 4)
         $ renderColourBar
-            (cbOpts (DrawFont font') discreteColors)
+            (cbOpts (DrawFont font') dbb discreteColors)
             cm
             (fromMaybe 0 minVal, fromMaybe 0 maxVal)
             100

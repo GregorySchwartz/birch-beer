@@ -142,6 +142,7 @@ main = do
                             . unHelpful
                             . drawItemLineWeight
                             $ opts
+        drawBarBounds'    = DrawBarBounds . unHelpful . drawBarBounds $ opts
         output'           =
             fromMaybe "dendrogram.svg" . unHelpful . output $ opts
 
@@ -209,6 +210,7 @@ main = do
                         , _birchDrawScaleSaturation = drawScaleSaturation'
                         , _birchDrawFont            = drawFont'
                         , _birchDrawItemLineWeight  = drawItemLineWeight'
+                        , _birchDrawBarBounds       = drawBarBounds'
                         , _birchTree                = tree
                         , _birchMat                 = Nothing
                         , _birchSimMat              = simMat

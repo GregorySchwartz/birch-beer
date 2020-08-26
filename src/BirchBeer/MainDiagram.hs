@@ -105,6 +105,7 @@ mainDiagram config = do
         drawFont'         = fromMaybe (DrawFont "Arial") $ _birchDrawFont config
         drawItemLineWeight' = fromMaybe (DrawItemLineWeight 0.1)
                             $ _birchDrawItemLineWeight config
+        drawBarBounds'    = _birchDrawBarBounds config
         order'            = fromMaybe (Order 1) $ _birchOrder config
         mat               = return $ _birchMat config
         simMat            = _birchSimMat config
@@ -137,6 +138,7 @@ mainDiagram config = do
                                 drawNoScaleNodes'
                                 drawLegendSep'
                                 drawItemLineWeight'
+                                drawBarBounds'
 
     -- Get the color of each label.
     let labelColorMapRaw =
@@ -246,6 +248,7 @@ mainDiagram config = do
                     fmap
                         ( fmap ( plotContinuousLegend
                                   drawFont'
+                                  drawBarBounds'
                                   drawColors'
                                   discreteColors
                                   (fromMaybe (DrawScaleSaturation 1) drawScaleSaturation')
@@ -258,6 +261,7 @@ mainDiagram config = do
                       ( fmap
                           ( plotSumContinuousLegend
                             drawFont'
+                            drawBarBounds'
                             drawColors'
                             discreteColors
                             (fromMaybe (DrawScaleSaturation 1) drawScaleSaturation')

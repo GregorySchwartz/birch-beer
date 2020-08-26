@@ -126,6 +126,7 @@ interactiveDiagram tree labelMap mat simMat = graphicalUI' "birch-beer" $ do
                             , _birchDrawScaleSaturation = drawScaleSaturation'
                             , _birchDrawFont            = Nothing
                             , _birchDrawItemLineWeight  = drawItemLineWeight'
+                            , _birchDrawBarBounds       = DrawBarBounds False
                             , _birchTree                = tree
                             , _birchMat                 = mat
                             , _birchSimMat              = simMat
