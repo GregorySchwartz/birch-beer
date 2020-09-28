@@ -14,6 +14,7 @@ module BirchBeer.ColorMap
     , getLabelColorMap
     , getLabelCustomColorMap
     , getLabelMapThresholdContinuous
+    , getLabelMapProximity
     , labelToItemColorMap
     , getItemColorMapContinuous
     , getItemValueMap
@@ -43,7 +44,7 @@ import Data.Colour.Palette.ColorSet (rybColor)
 import Data.Foldable (foldl')
 import Data.Function (on)
 import Data.Int (Int32)
-import Data.Maybe (fromMaybe, isNothing)
+import Data.Maybe (fromMaybe, isNothing, mapMaybe)
 import Data.Tuple (swap)
 import Diagrams.Prelude
 import Math.Diversity.Diversity (diversity)
@@ -284,6 +285,38 @@ getLabelMapThresholdContinuous gs mat
              . fmap Feature
              . getColNames
              $ mat
+
+-- | Get the spatial neighbor labels of each item, where the label is determined
+-- by the proximity (Euclidean distance) of the items from a collection of nodes.
+getLabelMapProximity
+  :: (TreeItem a)
+  => ClusterGraph a -> CoordinateMap -> ([G.Node], Double) -> LabelMap
+getLabelMapProximity (ClusterGraph gr) (CoordinateMap coordm) (!nodes, !thresh) =
+  LabelMap
+    . Map.fromList
+    . fmap (\ !x -> (x, assignLabel x))
+    . Map.keys
+    $ coordm
+  where
+    baseLocations = mapMaybe (flip Map.lookup coordm) . Set.toList $ baseItems
+    baseItems :: Set.Set Id
+    baseItems = Set.fromList
+              . fmap getId
+              . F.toList
+              . mconcat
+              . mapMaybe snd
+              . F.toList
+              . mconcat
+              . fmap (getGraphLeaves gr)
+              $ nodes
+    assignLabel x
+      | Set.member x baseItems = Label "Base"
+      | any (<= thresh)
+          . mapMaybe (\ b
+                     -> Map.lookup x coordm >>= \z -> Just (S.norm2 (b S.^-^ z))
+                     )
+          $ baseLocations = Label "Neighbor"
+      | otherwise = Label "Distant"
 
 -- | Get the colors of each item, where the color is determined by the sum of
 -- features in that item.

@@ -334,7 +334,7 @@ mad p xs = median p $ V.map (abs . subtract med) xs
 median :: S.ContParam  -- ^ Parameters /α/ and /β/.
        -> V.Vector Double   -- ^ /x/, the sample data.
        -> Double
-median p = S.continuousBy p 1 2
+median p = S.median p
 
 -- | Get the collection of items in a leaf.
 getGraphLeafItems :: ClusterGraph a -> G.Node -> Seq.Seq a

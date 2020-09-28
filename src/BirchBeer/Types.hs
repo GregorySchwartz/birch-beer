@@ -201,6 +201,9 @@ newtype CustomColors = CustomColors
 newtype DiscreteColorMap = DiscreteColorMap
     { unDiscreteColorMap :: [Kolor]
     } deriving (Read, Show)
+newtype CoordinateMap = CoordinateMap
+    { unCoordinateMap :: Map.Map Id (S.SpVector Double)
+    } deriving (Show)
 newtype L = L Double
 newtype C = C Double
 newtype H = H Double
@@ -216,6 +219,7 @@ data DrawItemType
     = DrawLabel
     | DrawContinuous [T.Text]
     | DrawThresholdContinuous [(T.Text, Threshold)]
+    | DrawProximity ([G.Node], Double)
     | DrawSumContinuous
     | DrawDiversity
     deriving (Read,Show)

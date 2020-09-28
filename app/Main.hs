@@ -159,6 +159,8 @@ main = do
                         --     . fromMaybe (error "Requires matrix.")
                         --     )
                         --     mat
+                    (DrawItem (DrawProximity gs)) ->
+                        error "Proximity not supported here."
                     _ -> sequence . fmap (loadLabelData delimiter') $ labelsFile'
 
     let readMat file =
