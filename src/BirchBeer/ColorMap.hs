@@ -294,8 +294,8 @@ getLabelMapProximity
 getLabelMapProximity (ClusterGraph gr) (CoordinateMap coordm) (!nodes, !thresh) =
   LabelMap
     . Map.fromList
-    . fmap (\ !x -> (x, assignLabel x))
-    . Map.keys
+    . fmap (\ (!x, (!s1, _)) -> (x, assignLabel (s1, x)))
+    . Map.toAscList
     $ coordm
   where
     baseLocations = mapMaybe (flip Map.lookup coordm) . Set.toList $ baseItems
@@ -309,11 +309,12 @@ getLabelMapProximity (ClusterGraph gr) (CoordinateMap coordm) (!nodes, !thresh) 
               . mconcat
               . fmap (getGraphLeaves gr)
               $ nodes
-    assignLabel x
+    assignLabel (!s1, !x)
       | Set.member x baseItems = Label "Base"
-      | any (<= thresh)
+      | any (\(!s2, !v) -> s1 == s2 && v <= thresh)
           . mapMaybe (\ b
-                     -> Map.lookup x coordm >>= \z -> Just (S.norm2 (b S.^-^ z))
+                     -> Map.lookup x coordm
+                    >>= \z -> Just (fst b, S.norm2 (snd b S.^-^ snd z))
                      )
           $ baseLocations = Label "Neighbor"
       | otherwise = Label "Distant"

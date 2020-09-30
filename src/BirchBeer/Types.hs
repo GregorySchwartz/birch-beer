@@ -201,8 +201,11 @@ newtype CustomColors = CustomColors
 newtype DiscreteColorMap = DiscreteColorMap
     { unDiscreteColorMap :: [Kolor]
     } deriving (Read, Show)
+newtype Sample = Sample
+    { unSample :: T.Text
+    } deriving (Eq, Ord, Read, Show)
 newtype CoordinateMap = CoordinateMap
-    { unCoordinateMap :: Map.Map Id (S.SpVector Double)
+    { unCoordinateMap :: Map.Map Id (Maybe Sample, S.SpVector Double)
     } deriving (Show)
 newtype L = L Double
 newtype C = C Double
