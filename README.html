@@ -51,7 +51,7 @@
     padding: 3px;
     border: 1px solid black;
   }
-  pre.src:hover:before { display: inline;}
+  pre.src:hover:before { display: inline; margin-top: 14px;}
   /* Languages per Org manual */
   pre.src-asymptote:before { content: 'Asymptote'; }
   pre.src-awk:before { content: 'Awk'; }
@@ -228,38 +228,39 @@
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents">
 <ul>
-<li><a href="#orgccf56aa">Description</a></li>
-<li><a href="#org4b0b75c">Installation</a>
+<li><a href="#orgb2401ab">Description</a></li>
+<li><a href="#org13e194b">Installation</a>
 <ul>
-<li><a href="#org4b95cd0">Dependencies</a></li>
-<li><a href="#orgea5d4e3">Install <code>stack</code></a></li>
-<li><a href="#orga047b8f">Install <code>birch-beer</code></a>
+<li><a href="#orgb46a304">Use <code>nix</code></a></li>
+<li><a href="#org204682d">Dependencies</a></li>
+<li><a href="#org130b38e">Install <code>stack</code></a></li>
+<li><a href="#org69ff251">Install <code>birch-beer</code></a>
 <ul>
-<li><a href="#orga813937">Source</a></li>
-<li><a href="#org091662d">Online</a></li>
-<li><a href="#orga48242f">Docker</a></li>
+<li><a href="#org69b0f3c">Source</a></li>
+<li><a href="#orgd99969a">Online</a></li>
+<li><a href="#org07fbfab">Docker</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li><a href="#org79566a5">Usage</a>
+<li><a href="#org7da20b4">Usage</a>
 <ul>
-<li><a href="#org3c89903">Tree format</a>
+<li><a href="#org20af828">Tree format</a>
 <ul>
-<li><a href="#orgd2edd37">Example conversion from R</a></li>
+<li><a href="#org471f2dc">Example conversion from R</a></li>
 </ul>
 </li>
-<li><a href="#org4f1d18d">Labels format</a></li>
+<li><a href="#orgf00c8d8">Labels format</a></li>
 </ul>
 </li>
-<li><a href="#org07e9696">Select examples</a>
+<li><a href="#org56730ad">Select examples</a>
 <ul>
-<li><a href="#org66372d3">Large tree</a></li>
-<li><a href="#org3e79265">Number overlay</a></li>
-<li><a href="#org4a29f39">Distance overlay</a></li>
-<li><a href="#orgb9a7f22">Continuous color saturation</a></li>
-<li><a href="#org97a0167">Continuous multi-color saturation</a></li>
-<li><a href="#org60cf1e5">Diversity of labels</a></li>
+<li><a href="#org138221b">Large tree</a></li>
+<li><a href="#org4c2efa2">Number overlay</a></li>
+<li><a href="#org7b1494c">Distance overlay</a></li>
+<li><a href="#org0d7221d">Continuous color saturation</a></li>
+<li><a href="#orgb7a229c">Continuous multi-color saturation</a></li>
+<li><a href="#org51ecb12">Diversity of labels</a></li>
 </ul>
 </li>
 </ul>
@@ -273,11 +274,11 @@
 See <a href="https://github.com/GregorySchwartz/birch-beer">https://github.com/GregorySchwartz/birch-beer</a> for latest version.
 </p>
 
-<div id="outline-container-orgccf56aa" class="outline-2">
-<h2 id="orgccf56aa">Description</h2>
-<div class="outline-text-2" id="text-orgccf56aa">
+<div id="outline-container-orgb2401ab" class="outline-2">
+<h2 id="orgb2401ab">Description</h2>
+<div class="outline-text-2" id="text-orgb2401ab">
 
-<div id="org449e097" class="figure">
+<div id="orgacb21bd" class="figure">
 <p><img src="img/piechart_pruned_tree.png" alt="piechart_pruned_tree.png" />
 </p>
 </div>
@@ -292,13 +293,37 @@ blending, distance markers, and more, we can all create some home brewed
 </div>
 </div>
 
-<div id="outline-container-org4b0b75c" class="outline-2">
-<h2 id="org4b0b75c">Installation</h2>
-<div class="outline-text-2" id="text-org4b0b75c">
+<div id="outline-container-org13e194b" class="outline-2">
+<h2 id="org13e194b">Installation</h2>
+<div class="outline-text-2" id="text-org13e194b">
 </div>
-<div id="outline-container-org4b95cd0" class="outline-3">
-<h3 id="org4b95cd0">Dependencies</h3>
-<div class="outline-text-3" id="text-org4b95cd0">
+<div id="outline-container-orgb46a304" class="outline-3">
+<h3 id="orgb46a304">Use <code>nix</code></h3>
+<div class="outline-text-3" id="text-orgb46a304">
+<p>
+Installing <code>birch-beer</code> using <code>nix</code> is the easiest way to install from source.
+First, install <code>nix</code> following the instructions
+<a href="https://nixos.org/nix/">on the website</a>. Then run the commands:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh">git clone https://github.com/GregorySchwartz/birch-beer.git
+<span style="color: #ff8700;">cd</span> birch-beer
+nix-env -f default.nix -i birch-beer
+</pre>
+</div>
+
+<p>
+Then the <code>birch-beer</code> command should be in your path! If you do not wish to use
+<code>nix</code> or <code>docker</code>, then you can continue reading for dependencies and <code>stack</code>
+installation (no longer supported).
+</p>
+</div>
+</div>
+
+<div id="outline-container-org204682d" class="outline-3">
+<h3 id="org204682d">Dependencies</h3>
+<div class="outline-text-3" id="text-org204682d">
 <p>
 You may require the following dependencies to build and run (from Ubuntu 16.04,
 use the appropriate packages from your distribution of choice):
@@ -318,9 +343,9 @@ use the appropriate packages from your distribution of choice):
 </div>
 </div>
 
-<div id="outline-container-orgea5d4e3" class="outline-3">
-<h3 id="orgea5d4e3">Install <code>stack</code></h3>
-<div class="outline-text-3" id="text-orgea5d4e3">
+<div id="outline-container-org130b38e" class="outline-3">
+<h3 id="org130b38e">Install <code>stack</code></h3>
+<div class="outline-text-3" id="text-org130b38e">
 <p>
 See <a href="https://docs.haskellstack.org/en/stable/README/">https://docs.haskellstack.org/en/stable/README/</a> for more details.
 </p>
@@ -333,13 +358,13 @@ stack setup
 </div>
 </div>
 
-<div id="outline-container-orga047b8f" class="outline-3">
-<h3 id="orga047b8f">Install <code>birch-beer</code></h3>
-<div class="outline-text-3" id="text-orga047b8f">
+<div id="outline-container-org69ff251" class="outline-3">
+<h3 id="org69ff251">Install <code>birch-beer</code></h3>
+<div class="outline-text-3" id="text-org69ff251">
 </div>
-<div id="outline-container-orga813937" class="outline-4">
-<h4 id="orga813937">Source</h4>
-<div class="outline-text-4" id="text-orga813937">
+<div id="outline-container-org69b0f3c" class="outline-4">
+<h4 id="org69b0f3c">Source</h4>
+<div class="outline-text-4" id="text-org69b0f3c">
 <p>
 Probably the easiest method if you don't want to mess with dependencies (outside
 of the ones above).
@@ -354,9 +379,9 @@ stack install
 </div>
 </div>
 
-<div id="outline-container-org091662d" class="outline-4">
-<h4 id="org091662d">Online</h4>
-<div class="outline-text-4" id="text-org091662d">
+<div id="outline-container-orgd99969a" class="outline-4">
+<h4 id="orgd99969a">Online</h4>
+<div class="outline-text-4" id="text-orgd99969a">
 <p>
 We only require <code>stack</code> (or <code>cabal</code>), you do not need to download any source
 code (but you might need the stack.yaml dependency versions), just run the
@@ -379,9 +404,9 @@ file. For a quick <code>yaml</code> configuration, refer to
 </div>
 </div>
 
-<div id="outline-container-orga48242f" class="outline-4">
-<h4 id="orga48242f">Docker</h4>
-<div class="outline-text-4" id="text-orga48242f">
+<div id="outline-container-org07fbfab" class="outline-4">
+<h4 id="org07fbfab">Docker</h4>
+<div class="outline-text-4" id="text-org07fbfab">
 <p>
 Different computers have different setups, operating systems, and repositories.
 Do put the entire program in a container to bypass difficulties (with the other
@@ -421,9 +446,9 @@ docker build -t birch-beer -f ./Dockerfile .
 </div>
 </div>
 
-<div id="outline-container-org79566a5" class="outline-2">
-<h2 id="org79566a5">Usage</h2>
-<div class="outline-text-2" id="text-org79566a5">
+<div id="outline-container-org7da20b4" class="outline-2">
+<h2 id="org7da20b4">Usage</h2>
+<div class="outline-text-2" id="text-org7da20b4">
 <p>
 <b>For a more detailed look at many of the features</b>, check out the
 <code>too-many-cells</code> <a href="https://github.com/GregorySchwartz/too-many-cells">README</a> about <code>make-tree</code>, which uses <code>birch-beer</code> to plot
@@ -437,9 +462,9 @@ help. The general usage would be:
 </div>
 </div>
 
-<div id="outline-container-org3c89903" class="outline-3">
-<h3 id="org3c89903">Tree format</h3>
-<div class="outline-text-3" id="text-org3c89903">
+<div id="outline-container-org20af828" class="outline-3">
+<h3 id="org20af828">Tree format</h3>
+<div class="outline-text-3" id="text-org20af828">
 <p>
 The input tree format should be a <code>json</code> file with a recursive structure. An
 object is represented by <code>[{"_distance": DOUBLE, "_item": [STRING]},
@@ -448,14 +473,14 @@ object is represented by <code>[{"_distance": DOUBLE, "_item": [STRING]},
 rose trees as well! For example:
 </p>
 
-<pre class="example" id="org71fadaf">
+<pre class="example" id="orga79e267">
 [{"_distance": 0.8}, [[{"_item": ["1", "2"]}, [[{"_item": ["3", "4", "5"]}, []], [{"_item": ["6", "7"]}, []]]], [{"_item": ["8", "9", "10", "11"]}, []]]]
 </pre>
 </div>
 
-<div id="outline-container-orgd2edd37" class="outline-4">
-<h4 id="orgd2edd37">Example conversion from R</h4>
-<div class="outline-text-4" id="text-orgd2edd37">
+<div id="outline-container-org471f2dc" class="outline-4">
+<h4 id="org471f2dc">Example conversion from R</h4>
+<div class="outline-text-4" id="text-org471f2dc">
 <p>
 To get to the required format, here is an example to get from an R <code>hclust</code> tree
 to the appropriate <code>json</code>.
@@ -508,9 +533,9 @@ Then we can see the tree using birch-beer.
 </div>
 </div>
 
-<div id="outline-container-org4f1d18d" class="outline-3">
-<h3 id="org4f1d18d">Labels format</h3>
-<div class="outline-text-3" id="text-org4f1d18d">
+<div id="outline-container-orgf00c8d8" class="outline-3">
+<h3 id="orgf00c8d8">Labels format</h3>
+<div class="outline-text-3" id="text-orgf00c8d8">
 <p>
 To assign labels (and thus colors) to the elements within the tree, make a <code>csv</code>
 file with an <code>item,label</code> format. Both columns are treated as strings, so
@@ -518,7 +543,7 @@ anything can be used as long as the <code>item</code> column matches the item st
 the tree. For example to go with the above tree:
 </p>
 
-<pre class="example" id="org5532255">
+<pre class="example" id="org7f7bf40">
 item,label
 1,1
 2,1
@@ -536,70 +561,70 @@ item,label
 </div>
 </div>
 
-<div id="outline-container-org07e9696" class="outline-2">
-<h2 id="org07e9696">Select examples</h2>
-<div class="outline-text-2" id="text-org07e9696">
+<div id="outline-container-org56730ad" class="outline-2">
+<h2 id="org56730ad">Select examples</h2>
+<div class="outline-text-2" id="text-org56730ad">
 </div>
-<div id="outline-container-org66372d3" class="outline-3">
-<h3 id="org66372d3">Large tree</h3>
-<div class="outline-text-3" id="text-org66372d3">
+<div id="outline-container-org138221b" class="outline-3">
+<h3 id="org138221b">Large tree</h3>
+<div class="outline-text-3" id="text-org138221b">
 
-<div id="org508ac5b" class="figure">
+<div id="orgc1bb30b" class="figure">
 <p><img src="img/complete_default_tree.png" alt="complete_default_tree.png" />
 </p>
 </div>
 </div>
 </div>
 
-<div id="outline-container-org3e79265" class="outline-3">
-<h3 id="org3e79265">Number overlay</h3>
-<div class="outline-text-3" id="text-org3e79265">
+<div id="outline-container-org4c2efa2" class="outline-3">
+<h3 id="org4c2efa2">Number overlay</h3>
+<div class="outline-text-3" id="text-org4c2efa2">
 
-<div id="org23afd22" class="figure">
+<div id="orgeb17f84" class="figure">
 <p><img src="img/numbered_pruned_tree.png" alt="numbered_pruned_tree.png" />
 </p>
 </div>
 </div>
 </div>
 
-<div id="outline-container-org4a29f39" class="outline-3">
-<h3 id="org4a29f39">Distance overlay</h3>
-<div class="outline-text-3" id="text-org4a29f39">
+<div id="outline-container-org7b1494c" class="outline-3">
+<h3 id="org7b1494c">Distance overlay</h3>
+<div class="outline-text-3" id="text-org7b1494c">
 
-<div id="orgd26e5e8" class="figure">
+<div id="org1f83293" class="figure">
 <p><img src="img/modularity_pruned_tree.png" alt="modularity_pruned_tree.png" />
 </p>
 </div>
 </div>
 </div>
 
-<div id="outline-container-orgb9a7f22" class="outline-3">
-<h3 id="orgb9a7f22">Continuous color saturation</h3>
-<div class="outline-text-3" id="text-orgb9a7f22">
+<div id="outline-container-org0d7221d" class="outline-3">
+<h3 id="org0d7221d">Continuous color saturation</h3>
+<div class="outline-text-3" id="text-org0d7221d">
 
-<div id="org0c02a19" class="figure">
+<div id="orgff8e284" class="figure">
 <p><img src="img/cd4_saturated_10_dendrogram.png" alt="cd4_saturated_10_dendrogram.png" />
 </p>
 </div>
 </div>
 </div>
 
-<div id="outline-container-org97a0167" class="outline-3">
-<h3 id="org97a0167">Continuous multi-color saturation</h3>
-<div class="outline-text-3" id="text-org97a0167">
+<div id="outline-container-orgb7a229c" class="outline-3">
+<h3 id="orgb7a229c">Continuous multi-color saturation</h3>
+<div class="outline-text-3" id="text-orgb7a229c">
 
-<div id="org6a57d62" class="figure">
+<div id="org9e1f052" class="figure">
 <p><img src="img/cd4_cd8_sat_10_dendrogram.png" alt="cd4_cd8_sat_10_dendrogram.png" />
 </p>
 </div>
 </div>
 </div>
 
-<div id="outline-container-org60cf1e5" class="outline-3">
-<h3 id="org60cf1e5">Diversity of labels</h3>
-<div class="outline-text-3" id="text-org60cf1e5">
+<div id="outline-container-org51ecb12" class="outline-3">
+<h3 id="org51ecb12">Diversity of labels</h3>
+<div class="outline-text-3" id="text-org51ecb12">
 
-<div id="org6c59251" class="figure">
+<div id="org01f5ba3" class="figure">
 <p><img src="img/diversity_pruned_tree.png" alt="diversity_pruned_tree.png" />
 </p>
 </div>

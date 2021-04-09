@@ -20,6 +20,22 @@ blending, distance markers, and more, we can all create some home brewed
 
 * Installation
 
+** Use =nix=
+
+Installing =birch-beer= using =nix= is the easiest way to install from source.
+First, install =nix= following the instructions
+[[https://nixos.org/nix/][on the website]]. Then run the commands:
+
+#+BEGIN_SRC sh
+git clone https://github.com/GregorySchwartz/birch-beer.git
+cd birch-beer
+nix-env -f default.nix -i birch-beer
+#+END_SRC
+
+Then the =birch-beer= command should be in your path! If you do not wish to use
+=nix= or =docker=, then you can continue reading for dependencies and =stack=
+installation (no longer supported).
+
 ** Dependencies
 
 You may require the following dependencies to build and run (from Ubuntu 16.04,
