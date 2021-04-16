@@ -137,9 +137,7 @@ interactiveDiagram tree labelMap mat simMat = graphicalUI' "birch-beer" $ do
 graphicalUI'
     :: T.Text
     -> TS.Updatable (IO (D.Diagram D.Cairo))
-    ->
-       -- ^ Program logic
-       IO ()
+    -> IO ()
 graphicalUI' = TS.ui setupGraphical processGraphicalEvent
   where
     setupGraphical :: Gtk.HBox -> IO Gtk.DrawingArea
@@ -176,9 +174,7 @@ graphicalUI' = TS.ui setupGraphical processGraphicalEvent
 graphicalUIPng'
     :: T.Text
     -> TS.Updatable (IO (D.Diagram D.Cairo))
-    ->
-       -- ^ Program logic
-       IO ()
+    -> IO ()
 graphicalUIPng' title updatable = withTempFile "." "temp_tree.png" $ \file h -> do
     TS.ui setupGraphical (processGraphicalEvent file h) title updatable
   where

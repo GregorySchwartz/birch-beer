@@ -16,7 +16,7 @@ let
   compiler = pkgs.haskell.packages."${compilerVersion}";
 
   # BirchBeer package
-  pkg = pkgs.haskell.lib.dontHaddock (compiler.developPackage {
+  pkg = compiler.developPackage {
     root = ./.;
     source-overrides = {
       elbow = builtins.fetchTarball https://github.com/GregorySchwartz/elbow/archive/03fff043c88b8c3de83b08f1638963f46e604c90.tar.gz;
@@ -33,7 +33,7 @@ let
       streaming-cassava = doJailbreak super.streaming-cassava;
       typed-spreadsheet = doJailbreak super.typed-spreadsheet;
     });
-  });
+  };
   buildInputs = [ pkgs.zlib
                   pkgs.zlib.dev
                   pkgs.zlib.out
