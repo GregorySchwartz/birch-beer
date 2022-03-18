@@ -31,6 +31,7 @@ let
       hmatrix-svdlibc = dontCheck (doJailbreak super.hmatrix-svdlibc);
       pipes-text = doJailbreak super.pipes-text;
       streaming-cassava = doJailbreak super.streaming-cassava;
+      sparse-linear-algebra = dontCheck super.sparse-linear-algebra;
       typed-spreadsheet = doJailbreak super.typed-spreadsheet;
     });
   };
