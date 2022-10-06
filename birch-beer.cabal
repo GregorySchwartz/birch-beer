@@ -6,8 +6,8 @@ homepage:            http://github.com/GregorySchwartz/birch-beer#readme
 license:             GPL-3
 license-file:        LICENSE
 author:              Gregory W. Schwartz
-maintainer:          gsch@pennmedicine.upenn.edu
-copyright:           2019 Gregory W. Schwartz
+maintainer:          gregory.schwartz@uhnresearch.ca
+copyright:           2022 Gregory W. Schwartz
 category:            Bioinformatics
 build-type:          Simple
 -- extra-source-files:
